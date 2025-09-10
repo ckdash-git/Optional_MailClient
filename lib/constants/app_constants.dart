@@ -13,7 +13,7 @@ class AppConstants {
   ];
   
   // App Configuration
-  static const String appName = 'AI Mail Client';
+  static const String appName = 'Optional MailClient';
   static const String appVersion = '1.0.0';
   
   // Storage Keys
