@@ -140,9 +140,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                           ),
                           child: Padding(
                             padding: EdgeInsets.symmetric(
-                              horizontal: constraints.maxWidth > 600 ? 48.0 : 24.0,
-                              vertical: isVerySmallScreen ? 16.0 : 24.0,
-                            ),
+              horizontal: constraints.maxWidth * (constraints.maxWidth > 600 ? 0.08 : 0.06),
+              vertical: size.height * (isVerySmallScreen ? 0.02 : 0.03),
+            ),
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.center,
@@ -151,39 +151,28 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                                 _buildHeader(colorScheme, theme, isSmallScreen),
                                 
                                 SizedBox(
-                                  height: isVerySmallScreen 
-                                    ? 20 
+                                  height: size.height * (isVerySmallScreen 
+                                    ? 0.05 
                                     : isSmallScreen 
-                                      ? 30 
-                                      : size.height * 0.08,
+                                      ? 0.08 
+                                      : 0.12),
                                 ),
                                 
                                 // Welcome Text
                                 _buildWelcomeText(theme, colorScheme, isSmallScreen),
                                 
                                 SizedBox(
-                                  height: isVerySmallScreen 
-                                    ? 16 
+                                  height: size.height * (isVerySmallScreen 
+                                    ? 0.05 
                                     : isSmallScreen 
-                                      ? 24 
-                                      : size.height * 0.06,
-                                ),
-                                
-                                // Features List
-                                _buildFeaturesList(theme, colorScheme, isSmallScreen),
-                                
-                                SizedBox(
-                                  height: isVerySmallScreen 
-                                    ? 20 
-                                    : isSmallScreen 
-                                      ? 30 
-                                      : size.height * 0.08,
+                                      ? 0.08 
+                                      : 0.12),
                                 ),
                                 
                                 // Sign In Button
                                 _buildSignInButton(theme, colorScheme),
                                 
-                                const SizedBox(height: 24),
+                                SizedBox(height: size.height * 0.04),
                                 
                                 // Privacy Notice
                                 _buildPrivacyNotice(theme, colorScheme, isSmallScreen),
@@ -204,8 +193,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
   }
 
   Widget _buildHeader(ColorScheme colorScheme, ThemeData theme, bool isSmallScreen) {
-    final logoSize = isSmallScreen ? 80.0 : 100.0;
-    final iconSize = isSmallScreen ? 36.0 : 48.0;
+    final size = MediaQuery.of(context).size;
+    final logoSize = size.width * (isSmallScreen ? 0.25 : 0.3);
+    final iconSize = size.width * (isSmallScreen ? 0.12 : 0.15);
     
     return Column(
       children: [
@@ -214,30 +204,31 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
           height: logoSize,
           decoration: BoxDecoration(
             color: colorScheme.onPrimary,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(size.width * 0.06),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.2),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
+                color: Colors.black.withOpacity(0.15),
+                blurRadius: 24,
+                offset: const Offset(0, 8),
               ),
             ],
           ),
           child: Icon(
-            Icons.smart_toy_rounded,
+            Icons.mail_outline_rounded,
             size: iconSize,
             color: colorScheme.primary,
           ),
         ),
-        SizedBox(height: isSmallScreen ? 16 : 20),
+        SizedBox(height: size.height * (isSmallScreen ? 0.025 : 0.03)),
         FittedBox(
           fit: BoxFit.scaleDown,
           child: Text(
             AppConstants.appName,
             style: theme.textTheme.headlineLarge?.copyWith(
               color: colorScheme.onPrimary,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1.2,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.5,
+              fontSize: size.width * (isSmallScreen ? 0.07 : 0.08),
             ),
           ),
         ),
@@ -246,107 +237,81 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
   }
 
   Widget _buildWelcomeText(ThemeData theme, ColorScheme colorScheme, bool isSmallScreen) {
+    final size = MediaQuery.of(context).size;
     return Column(
       children: [
         FittedBox(
           fit: BoxFit.scaleDown,
           child: Text(
-            'Welcome to the Future of Email',
+            'Simplify Your Email Experience',
             textAlign: TextAlign.center,
             style: (isSmallScreen 
               ? theme.textTheme.titleLarge 
               : theme.textTheme.headlineSmall)?.copyWith(
               color: colorScheme.onPrimary,
               fontWeight: FontWeight.w600,
+              fontSize: size.width * (isSmallScreen ? 0.055 : 0.065),
             ),
           ),
         ),
-        SizedBox(height: isSmallScreen ? 8 : 12),
-        Text(
-          'Experience AI-powered email management that learns from your habits and organizes your inbox intelligently.',
-          textAlign: TextAlign.center,
-          style: (isSmallScreen 
-            ? theme.textTheme.bodyMedium 
-            : theme.textTheme.bodyLarge)?.copyWith(
-            color: colorScheme.onPrimary.withOpacity(0.9),
-            height: 1.5,
+        SizedBox(height: size.height * (isSmallScreen ? 0.015 : 0.02)),
+        Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: size.width * (isSmallScreen ? 0.04 : 0.08),
+          ),
+          child: Text(
+            'Access and manage your Gmail with a clean, intuitive interface designed for productivity.',
+            textAlign: TextAlign.center,
+            style: (isSmallScreen 
+              ? theme.textTheme.bodyMedium 
+              : theme.textTheme.bodyLarge)?.copyWith(
+              color: colorScheme.onPrimary.withOpacity(0.85),
+              height: 1.6,
+              fontSize: size.width * (isSmallScreen ? 0.035 : 0.04),
+            ),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildFeaturesList(ThemeData theme, ColorScheme colorScheme, bool isSmallScreen) {
-    final features = [
-      {'icon': Icons.auto_awesome, 'text': 'Smart categorization'},
-      {'icon': Icons.security, 'text': 'Secure OAuth authentication'},
-      {'icon': Icons.analytics, 'text': 'Email analytics & insights'},
-      {'icon': Icons.speed, 'text': 'Lightning-fast performance'},
-    ];
 
-    final iconSize = isSmallScreen ? 32.0 : 40.0;
-    final iconInnerSize = isSmallScreen ? 16.0 : 20.0;
-    final verticalPadding = isSmallScreen ? 6.0 : 8.0;
-
-    return Column(
-      children: features.map((feature) {
-        return Padding(
-          padding: EdgeInsets.symmetric(vertical: verticalPadding),
-          child: Row(
-            children: [
-              Container(
-                width: iconSize,
-                height: iconSize,
-                decoration: BoxDecoration(
-                  color: colorScheme.onPrimary.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(
-                  feature['icon'] as IconData,
-                  color: colorScheme.onPrimary,
-                  size: iconInnerSize,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Text(
-                  feature['text'] as String,
-                  style: (isSmallScreen 
-                    ? theme.textTheme.bodyMedium 
-                    : theme.textTheme.bodyLarge)?.copyWith(
-                    color: colorScheme.onPrimary.withOpacity(0.9),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      }).toList(),
-    );
-  }
 
   Widget _buildSignInButton(ThemeData theme, ColorScheme colorScheme) {
-    return SizedBox(
+    final size = MediaQuery.of(context).size;
+    return Container(
       width: double.infinity,
-      height: 56,
+      height: size.height * 0.08,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(size.width * 0.05),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       child: ElevatedButton(
         onPressed: _isSigningIn ? null : _handleSignIn,
         style: ElevatedButton.styleFrom(
           backgroundColor: colorScheme.onPrimary,
           foregroundColor: colorScheme.primary,
-          elevation: 8,
-          shadowColor: Colors.black.withOpacity(0.3),
+          elevation: 0,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(size.width * 0.05),
+          ),
+          padding: EdgeInsets.symmetric(
+            horizontal: size.width * 0.06, 
+            vertical: size.height * 0.02
           ),
         ),
         child: _isSigningIn
             ? SizedBox(
-                width: 24,
-                height: 24,
+                width: size.width * 0.07,
+                height: size.width * 0.07,
                 child: CircularProgressIndicator(
-                  strokeWidth: 2,
+                  strokeWidth: 3,
                   valueColor: AlwaysStoppedAnimation<Color>(
                     colorScheme.primary,
                   ),
@@ -357,20 +322,21 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                 children: [
                   SvgPicture.asset(
                     'assets/images/google_logo.svg',
-                    width: 24,
-                    height: 24,
+                    width: size.width * 0.07,
+                    height: size.width * 0.07,
                     placeholderBuilder: (context) => Icon(
-                      Icons.login,
-                      size: 24,
+                      Icons.login_rounded,
+                      size: size.width * 0.07,
                       color: colorScheme.primary,
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: size.width * 0.04),
                   Text(
                     'Continue with Google',
                     style: theme.textTheme.titleMedium?.copyWith(
                       color: colorScheme.primary,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w700,
+                      fontSize: size.width * 0.045,
                     ),
                   ),
                 ],
@@ -380,14 +346,21 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
   }
 
   Widget _buildPrivacyNotice(ThemeData theme, ColorScheme colorScheme, bool isSmallScreen) {
-    return Text(
-      'By continuing, you agree to our Terms of Service and Privacy Policy. Your data is encrypted and secure.',
-      textAlign: TextAlign.center,
-      style: (isSmallScreen 
-        ? theme.textTheme.bodySmall?.copyWith(fontSize: 11) 
-        : theme.textTheme.bodySmall)?.copyWith(
-        color: colorScheme.onPrimary.withOpacity(0.7),
-        height: 1.4,
+    final size = MediaQuery.of(context).size;
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: size.width * (isSmallScreen ? 0.06 : 0.12),
+      ),
+      child: Text(
+        'Secure authentication via Google. Your privacy is protected.',
+        textAlign: TextAlign.center,
+        style: (isSmallScreen 
+          ? theme.textTheme.bodySmall?.copyWith(fontSize: size.width * 0.03) 
+          : theme.textTheme.bodySmall)?.copyWith(
+          color: colorScheme.onPrimary.withOpacity(0.75),
+          height: 1.5,
+          fontWeight: FontWeight.w400,
+        ),
       ),
     );
   }
