@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../constants/app_constants.dart';
 import '../services/auth_service.dart';
 
@@ -126,36 +127,72 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                 offset: Offset(0, _slideAnimation.value),
                 child: Opacity(
                   opacity: _fadeAnimation.value,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        // App Logo and Title
-                        _buildHeader(colorScheme, theme),
-                        
-                        SizedBox(height: size.height * 0.08),
-                        
-                        // Welcome Text
-                        _buildWelcomeText(theme, colorScheme),
-                        
-                        SizedBox(height: size.height * 0.06),
-                        
-                        // Features List
-                        _buildFeaturesList(theme, colorScheme),
-                        
-                        SizedBox(height: size.height * 0.08),
-                        
-                        // Sign In Button
-                        _buildSignInButton(theme, colorScheme),
-                        
-                        const SizedBox(height: 24),
-                        
-                        // Privacy Notice
-                        _buildPrivacyNotice(theme, colorScheme),
-                      ],
-                    ),
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final isSmallScreen = constraints.maxHeight < 600;
+                      final isVerySmallScreen = constraints.maxHeight < 500;
+                      
+                      return SingleChildScrollView(
+                        physics: const BouncingScrollPhysics(),
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            minHeight: constraints.maxHeight,
+                          ),
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: constraints.maxWidth > 600 ? 48.0 : 24.0,
+                              vertical: isVerySmallScreen ? 16.0 : 24.0,
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                // App Logo and Title
+                                _buildHeader(colorScheme, theme, isSmallScreen),
+                                
+                                SizedBox(
+                                  height: isVerySmallScreen 
+                                    ? 20 
+                                    : isSmallScreen 
+                                      ? 30 
+                                      : size.height * 0.08,
+                                ),
+                                
+                                // Welcome Text
+                                _buildWelcomeText(theme, colorScheme, isSmallScreen),
+                                
+                                SizedBox(
+                                  height: isVerySmallScreen 
+                                    ? 16 
+                                    : isSmallScreen 
+                                      ? 24 
+                                      : size.height * 0.06,
+                                ),
+                                
+                                // Features List
+                                _buildFeaturesList(theme, colorScheme, isSmallScreen),
+                                
+                                SizedBox(
+                                  height: isVerySmallScreen 
+                                    ? 20 
+                                    : isSmallScreen 
+                                      ? 30 
+                                      : size.height * 0.08,
+                                ),
+                                
+                                // Sign In Button
+                                _buildSignInButton(theme, colorScheme),
+                                
+                                const SizedBox(height: 24),
+                                
+                                // Privacy Notice
+                                _buildPrivacyNotice(theme, colorScheme, isSmallScreen),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ),
               );
@@ -166,12 +203,15 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
     );
   }
 
-  Widget _buildHeader(ColorScheme colorScheme, ThemeData theme) {
+  Widget _buildHeader(ColorScheme colorScheme, ThemeData theme, bool isSmallScreen) {
+    final logoSize = isSmallScreen ? 80.0 : 100.0;
+    final iconSize = isSmallScreen ? 36.0 : 48.0;
+    
     return Column(
       children: [
         Container(
-          width: 100,
-          height: 100,
+          width: logoSize,
+          height: logoSize,
           decoration: BoxDecoration(
             color: colorScheme.onPrimary,
             borderRadius: BorderRadius.circular(20),
@@ -185,39 +225,49 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
           ),
           child: Icon(
             Icons.smart_toy_rounded,
-            size: 48,
+            size: iconSize,
             color: colorScheme.primary,
           ),
         ),
-        const SizedBox(height: 20),
-        Text(
-          AppConstants.appName,
-          style: theme.textTheme.headlineLarge?.copyWith(
-            color: colorScheme.onPrimary,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 1.2,
+        SizedBox(height: isSmallScreen ? 16 : 20),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            AppConstants.appName,
+            style: theme.textTheme.headlineLarge?.copyWith(
+              color: colorScheme.onPrimary,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.2,
+            ),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildWelcomeText(ThemeData theme, ColorScheme colorScheme) {
+  Widget _buildWelcomeText(ThemeData theme, ColorScheme colorScheme, bool isSmallScreen) {
     return Column(
       children: [
-        Text(
-          'Welcome to the Future of Email',
-          textAlign: TextAlign.center,
-          style: theme.textTheme.headlineSmall?.copyWith(
-            color: colorScheme.onPrimary,
-            fontWeight: FontWeight.w600,
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            'Welcome to the Future of Email',
+            textAlign: TextAlign.center,
+            style: (isSmallScreen 
+              ? theme.textTheme.titleLarge 
+              : theme.textTheme.headlineSmall)?.copyWith(
+              color: colorScheme.onPrimary,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: isSmallScreen ? 8 : 12),
         Text(
           'Experience AI-powered email management that learns from your habits and organizes your inbox intelligently.',
           textAlign: TextAlign.center,
-          style: theme.textTheme.bodyLarge?.copyWith(
+          style: (isSmallScreen 
+            ? theme.textTheme.bodyMedium 
+            : theme.textTheme.bodyLarge)?.copyWith(
             color: colorScheme.onPrimary.withOpacity(0.9),
             height: 1.5,
           ),
@@ -226,7 +276,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
     );
   }
 
-  Widget _buildFeaturesList(ThemeData theme, ColorScheme colorScheme) {
+  Widget _buildFeaturesList(ThemeData theme, ColorScheme colorScheme, bool isSmallScreen) {
     final features = [
       {'icon': Icons.auto_awesome, 'text': 'Smart categorization'},
       {'icon': Icons.security, 'text': 'Secure OAuth authentication'},
@@ -234,15 +284,19 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
       {'icon': Icons.speed, 'text': 'Lightning-fast performance'},
     ];
 
+    final iconSize = isSmallScreen ? 32.0 : 40.0;
+    final iconInnerSize = isSmallScreen ? 16.0 : 20.0;
+    final verticalPadding = isSmallScreen ? 6.0 : 8.0;
+
     return Column(
       children: features.map((feature) {
         return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8.0),
+          padding: EdgeInsets.symmetric(vertical: verticalPadding),
           child: Row(
             children: [
               Container(
-                width: 40,
-                height: 40,
+                width: iconSize,
+                height: iconSize,
                 decoration: BoxDecoration(
                   color: colorScheme.onPrimary.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(10),
@@ -250,14 +304,16 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                 child: Icon(
                   feature['icon'] as IconData,
                   color: colorScheme.onPrimary,
-                  size: 20,
+                  size: iconInnerSize,
                 ),
               ),
               const SizedBox(width: 16),
               Expanded(
                 child: Text(
                   feature['text'] as String,
-                  style: theme.textTheme.bodyLarge?.copyWith(
+                  style: (isSmallScreen 
+                    ? theme.textTheme.bodyMedium 
+                    : theme.textTheme.bodyLarge)?.copyWith(
                     color: colorScheme.onPrimary.withOpacity(0.9),
                     fontWeight: FontWeight.w500,
                   ),
@@ -299,17 +355,15 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
             : Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Image.asset(
-                    'assets/images/google_logo.png',
+                  SvgPicture.asset(
+                    'assets/images/google_logo.svg',
                     width: 24,
                     height: 24,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Icon(
-                        Icons.login,
-                        size: 24,
-                        color: colorScheme.primary,
-                      );
-                    },
+                    placeholderBuilder: (context) => Icon(
+                      Icons.login,
+                      size: 24,
+                      color: colorScheme.primary,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Text(
@@ -325,11 +379,13 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
     );
   }
 
-  Widget _buildPrivacyNotice(ThemeData theme, ColorScheme colorScheme) {
+  Widget _buildPrivacyNotice(ThemeData theme, ColorScheme colorScheme, bool isSmallScreen) {
     return Text(
       'By continuing, you agree to our Terms of Service and Privacy Policy. Your data is encrypted and secure.',
       textAlign: TextAlign.center,
-      style: theme.textTheme.bodySmall?.copyWith(
+      style: (isSmallScreen 
+        ? theme.textTheme.bodySmall?.copyWith(fontSize: 11) 
+        : theme.textTheme.bodySmall)?.copyWith(
         color: colorScheme.onPrimary.withOpacity(0.7),
         height: 1.4,
       ),

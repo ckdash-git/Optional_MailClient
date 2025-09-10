@@ -55,24 +55,25 @@ class GmailService {
         return [];
       }
 
-      // Fetch detailed information for each message
+      // Fetch detailed information for each message sequentially to avoid rate limiting
       final List<EmailModel> emails = [];
-      final futures = response.messages!.map((message) async {
+      for (final message in response.messages!) {
         try {
           final detailedMessage = await _gmailApi!.users.messages.get(
             'me',
             message.id!,
             format: 'full',
           );
-          return _parseEmailFromMessage(detailedMessage);
+          final email = _parseEmailFromMessage(detailedMessage);
+          if (email != null) {
+            emails.add(email);
+          }
+          // Add small delay to avoid rate limiting
+          await Future.delayed(const Duration(milliseconds: 100));
         } catch (e) {
           debugPrint('Error fetching message ${message.id}: $e');
-          return null;
         }
-      });
-
-      final results = await Future.wait(futures);
-      emails.addAll(results.where((email) => email != null).cast<EmailModel>());
+      }
 
       return emails;
     } catch (e) {

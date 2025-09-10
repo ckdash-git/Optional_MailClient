@@ -8,6 +8,7 @@ import '../models/email_model.dart';
 import '../widgets/email_list_widget.dart';
 import '../widgets/email_stats_widget.dart';
 import '../widgets/filter_drawer.dart';
+import 'email_detail_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -58,19 +59,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     });
 
     try {
-      final emails = await _gmailService.getEmails(
+      final rawEmails = await _gmailService.getEmails(
         maxResults: AppConstants.defaultEmailBatchSize,
       );
       
-      // Analyze emails for categorization
-      for (var email in emails) {
+      // Analyze emails for categorization and create new list
+      final List<EmailModel> categorizedEmails = [];
+      for (var email in rawEmails) {
         final category = _analysisService.categorizeEmail(email);
-        email = email.copyWith(category: category);
+        final categorizedEmail = email.copyWith(category: category);
+        categorizedEmails.add(categorizedEmail);
       }
       
       setState(() {
-        _emails = emails;
-        _filteredEmails = emails;
+        _emails = categorizedEmails;
+        _filteredEmails = categorizedEmails;
         _isLoading = false;
       });
       
@@ -116,22 +119,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     filtered.sort((a, b) {
       int comparison;
       switch (_sortBy) {
-        case EmailSortBy.date:
-          comparison = a.date.compareTo(b.date);
-          break;
-        case EmailSortBy.sender:
-          comparison = a.sender.compareTo(b.sender);
-          break;
-        case EmailSortBy.subject:
-          comparison = a.subject.compareTo(b.subject);
-          break;
-        case EmailSortBy.importance:
-          comparison = a.importance.compareTo(b.importance);
-          break;
-        case EmailSortBy.read:
-          // TODO: Handle this case.
-          throw UnimplementedError();
-      }
+          case EmailSortBy.date:
+            comparison = a.date.compareTo(b.date);
+            break;
+          case EmailSortBy.sender:
+            comparison = a.sender.compareTo(b.sender);
+            break;
+          case EmailSortBy.subject:
+            comparison = a.subject.compareTo(b.subject);
+            break;
+          case EmailSortBy.importance:
+            comparison = a.importance.compareTo(b.importance);
+            break;
+          case EmailSortBy.read:
+            comparison = a.isRead.toString().compareTo(b.isRead.toString());
+            break;
+        }
       return _sortAscending ? comparison : -comparison;
     });
     
@@ -174,89 +177,73 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 
   void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Theme.of(context).colorScheme.error,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Theme.of(context).colorScheme.error,
         ),
-      ),
-    );
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    _searchController.dispose();
-    super.dispose();
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return Scaffold(
-      key: _scaffoldKey,
-      appBar: _buildAppBar(theme, colorScheme),
-      drawer: FilterDrawer(
-        selectedCategory: _selectedCategory,
-        sortBy: _sortBy,
-        sortAscending: _sortAscending,
-        onCategoryChanged: _onCategoryChanged,
-        onSortChanged: _onSortChanged,
-      ),
-      body: Column(
-        children: [
-          // Search Bar
-          _buildSearchBar(theme, colorScheme),
-          
-          // Tab Bar
-          _buildTabBar(theme, colorScheme),
-          
-          // Tab Content
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _buildEmailListTab(),
-                _buildAnalyticsTab(),
-                _buildCategoriesTab(),
-                _buildSettingsTab(),
-              ],
-            ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isSmallScreen = constraints.maxWidth < 600;
+        
+        return Scaffold(
+          key: _scaffoldKey,
+          appBar: _buildAppBar(context, isSmallScreen),
+          drawer: FilterDrawer(
+            selectedCategory: _selectedCategory,
+            sortBy: _sortBy,
+            sortAscending: _sortAscending,
+            onCategoryChanged: _onCategoryChanged,
+            onSortChanged: _onSortChanged,
           ),
-        ],
-      ),
-      floatingActionButton: _buildFloatingActionButton(colorScheme),
+          body: Column(
+            children: [
+              _buildSearchBar(context, isSmallScreen),
+              _buildTabBar(context, isSmallScreen),
+              Expanded(
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildEmailListTab(),
+                    _buildAnalyticsTab(),
+                    _buildCategoriesTab(isSmallScreen),
+                    _buildSettingsTab(),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          floatingActionButton: _buildFloatingActionButton(context),
+        );
+      },
     );
   }
 
-  PreferredSizeWidget _buildAppBar(ThemeData theme, ColorScheme colorScheme) {
+  PreferredSizeWidget _buildAppBar(BuildContext context, bool isSmallScreen) {
     return AppBar(
       title: Text(
-        AppConstants.appName,
-        style: theme.textTheme.titleLarge?.copyWith(
-          fontWeight: FontWeight.bold,
+        'AI Mail Client',
+        style: TextStyle(
+          fontSize: isSmallScreen ? 18 : 20,
+          fontWeight: FontWeight.w600,
         ),
       ),
-      backgroundColor: colorScheme.surface,
-      foregroundColor: colorScheme.onSurface,
-      elevation: 0,
       actions: [
         IconButton(
           icon: const Icon(Icons.refresh),
           onPressed: _isRefreshing ? null : _refreshEmails,
-          tooltip: 'Refresh emails',
         ),
         PopupMenuButton<String>(
           onSelected: (value) {
-            switch (value) {
-              case 'signout':
-                _signOut();
-                break;
+            if (value == 'signout') {
+              _signOut();
             }
           },
           itemBuilder: (context) => [
@@ -276,9 +263,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     );
   }
 
-  Widget _buildSearchBar(ThemeData theme, ColorScheme colorScheme) {
+  Widget _buildSearchBar(BuildContext context, bool isSmallScreen) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
       child: TextField(
         controller: _searchController,
         onChanged: _onSearchChanged,
@@ -295,38 +282,46 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 )
               : null,
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide.none,
+            borderRadius: BorderRadius.circular(isSmallScreen ? 8 : 12),
           ),
-          filled: true,
-          fillColor: colorScheme.surfaceVariant.withOpacity(0.5),
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: isSmallScreen ? 12 : 16,
+            vertical: isSmallScreen ? 8 : 12,
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildTabBar(ThemeData theme, ColorScheme colorScheme) {
-    return Container(
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            color: colorScheme.outline.withOpacity(0.2),
-            width: 1,
-          ),
+  Widget _buildTabBar(BuildContext context, bool isSmallScreen) {
+    return TabBar(
+      controller: _tabController,
+      isScrollable: isSmallScreen,
+      labelStyle: TextStyle(
+        fontSize: isSmallScreen ? 12 : 14,
+        fontWeight: FontWeight.w600,
+      ),
+      unselectedLabelStyle: TextStyle(
+        fontSize: isSmallScreen ? 11 : 13,
+      ),
+      tabs: [
+        Tab(
+          icon: Icon(Icons.inbox, size: isSmallScreen ? 18 : 24),
+          text: 'Inbox',
         ),
-      ),
-      child: TabBar(
-        controller: _tabController,
-        labelColor: colorScheme.primary,
-        unselectedLabelColor: colorScheme.onSurface.withOpacity(0.6),
-        indicatorColor: colorScheme.primary,
-        tabs: const [
-          Tab(icon: Icon(Icons.inbox), text: 'Inbox'),
-          Tab(icon: Icon(Icons.analytics), text: 'Analytics'),
-          Tab(icon: Icon(Icons.category), text: 'Categories'),
-          Tab(icon: Icon(Icons.settings), text: 'Settings'),
-        ],
-      ),
+        Tab(
+          icon: Icon(Icons.analytics, size: isSmallScreen ? 18 : 24),
+          text: 'Analytics',
+        ),
+        Tab(
+          icon: Icon(Icons.category, size: isSmallScreen ? 18 : 24),
+          text: 'Categories',
+        ),
+        Tab(
+          icon: Icon(Icons.settings, size: isSmallScreen ? 18 : 24),
+          text: 'Settings',
+        ),
+      ],
     );
   }
 
@@ -343,7 +338,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.inbox,
+              Icons.inbox_outlined,
               size: 64,
               color: Theme.of(context).colorScheme.outline,
             ),
@@ -366,51 +361,84 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       child: EmailListWidget(
         emails: _filteredEmails,
         onEmailTap: (email) {
-          // TODO: Navigate to email detail screen
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => EmailDetailScreen(email: email),
+            ),
+          );
         },
       ),
     );
   }
 
   Widget _buildAnalyticsTab() {
+    if (_emails.isEmpty) {
+      return const Center(
+        child: Text('No data available for analytics'),
+      );
+    }
+
     return EmailStatsWidget(
       emails: _emails,
       analysisService: _analysisService,
     );
   }
 
-  Widget _buildCategoriesTab() {
-    final categories = _analysisService.getCategoryStats(_emails);
-    
+  Widget _buildCategoriesTab(bool isSmallScreen) {
+    if (_emails.isEmpty) {
+      return const Center(
+        child: Text('No emails to categorize'),
+      );
+    }
+
+    final categoryStats = <String, int>{};
+    for (final email in _emails) {
+      final category = email.category ?? 'Other';
+      categoryStats[category] = (categoryStats[category] ?? 0) + 1;
+    }
+
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: categories.length,
+      padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
+      itemCount: categoryStats.length,
       itemBuilder: (context, index) {
-        final category = categories.keys.elementAt(index);
-        final count = categories[category]!;
-        final percentage = _emails.isNotEmpty ? (count / _emails.length * 100) : 0.0;
-        
+        final category = categoryStats.keys.elementAt(index);
+        final count = categoryStats[category]!;
+        final percentage = (count / _emails.length) * 100;
+
         return Card(
-          margin: const EdgeInsets.only(bottom: 8),
+          margin: EdgeInsets.only(bottom: isSmallScreen ? 8 : 12),
           child: ListTile(
-            leading: CircleAvatar(
-              backgroundColor: _getCategoryColor(category),
-              child: Text(
-                count.toString(),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
+            contentPadding: EdgeInsets.all(isSmallScreen ? 12 : 16),
+            leading: Container(
+              width: isSmallScreen ? 32 : 40,
+              height: isSmallScreen ? 32 : 40,
+              decoration: BoxDecoration(
+                color: _getCategoryColor(category),
+                borderRadius: BorderRadius.circular(isSmallScreen ? 6 : 8),
+              ),
+              child: Icon(
+                _getCategoryIcon(category),
+                color: Colors.white,
+                size: isSmallScreen ? 16 : 20,
               ),
             ),
             title: Text(
               category,
-              style: const TextStyle(fontWeight: FontWeight.w600),
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: isSmallScreen ? 14 : 16,
+              ),
             ),
-            subtitle: Text('${percentage.toStringAsFixed(1)}% of total emails'),
+            subtitle: Text(
+              '${percentage.toStringAsFixed(1)}% of total emails',
+              style: TextStyle(
+                fontSize: isSmallScreen ? 12 : 14,
+              ),
+            ),
             trailing: Icon(
               Icons.arrow_forward_ios,
-              size: 16,
+              size: isSmallScreen ? 14 : 16,
               color: Theme.of(context).colorScheme.outline,
             ),
             onTap: () {
@@ -453,49 +481,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   // TODO: Navigate to notification settings
                 },
               ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-        Card(
-          child: Column(
-            children: [
-              ListTile(
-                leading: const Icon(Icons.help),
-                title: const Text('Help & Support'),
-                trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                onTap: () {
-                  // TODO: Navigate to help
-                },
-              ),
               const Divider(height: 1),
               ListTile(
-                leading: const Icon(Icons.info),
-                title: const Text('About'),
-                trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                onTap: () {
-                  // TODO: Show about dialog
-                },
+                leading: const Icon(Icons.logout, color: Colors.red),
+                title: const Text('Sign Out', style: TextStyle(color: Colors.red)),
+                onTap: _signOut,
               ),
             ],
-          ),
-        ),
-        const SizedBox(height: 24),
-        ElevatedButton.icon(
-          onPressed: _signOut,
-          icon: const Icon(Icons.logout),
-          label: const Text('Sign Out'),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Theme.of(context).colorScheme.error,
-            foregroundColor: Theme.of(context).colorScheme.onError,
-            minimumSize: const Size(double.infinity, 48),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildFloatingActionButton(ColorScheme colorScheme) {
+  Widget _buildFloatingActionButton(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return FloatingActionButton(
       onPressed: () {
         _scaffoldKey.currentState?.openDrawer();
@@ -523,5 +523,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       default:
         return Colors.grey;
     }
+  }
+
+  IconData _getCategoryIcon(String category) {
+    switch (category.toLowerCase()) {
+      case 'work':
+        return Icons.work;
+      case 'personal':
+        return Icons.person;
+      case 'promotions':
+        return Icons.local_offer;
+      case 'social':
+        return Icons.people;
+      case 'spam':
+        return Icons.block;
+      case 'important':
+        return Icons.star;
+      default:
+        return Icons.mail;
+    }
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    _searchController.dispose();
+    super.dispose();
   }
 }

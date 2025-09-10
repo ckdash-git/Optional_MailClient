@@ -59,9 +59,23 @@ The app requests these Gmail API scopes:
 
 ### 5. Testing
 
-1. Add your test email addresses to the OAuth consent screen test users
-2. Run the app: `flutter run`
-3. Test the Google Sign-In functionality
+1. **Development Testing**:
+   - **IMPORTANT**: For development, you need to add test users to your OAuth consent screen
+   - Go to Google Cloud Console → APIs & Services → OAuth consent screen
+   - Scroll down to "Test users" section
+   - Click "ADD USERS" and add the Gmail addresses you want to test with
+   - Only these test users can access your app during development
+   - Use test Google accounts
+   - Verify OAuth flow works correctly
+   - Test email fetching and analysis features
+
+2. **Production Testing**:
+   - Test with real user accounts
+   - Monitor API usage and quotas
+   - Verify all scopes work correctly
+
+3. Run the app: `flutter run`
+4. Test the Google Sign-In functionality
 
 ### 6. Production Deployment
 
