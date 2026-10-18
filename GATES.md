@@ -57,4 +57,4 @@ the repository root, in bash.
 
 ## Last run
 
-2026-10-18: G1–G5 and G7–G11 met (10 of 11 runnable gates); G6 is manual, pending CI; M1–M3 are open with the owner.
+2026-10-18: all 10 runnable gates met (G1–G5, G7–G11); G6 is manual, pending CI; M1–M3 are open with the owner.
