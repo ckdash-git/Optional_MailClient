@@ -3,6 +3,14 @@ plugins {
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+    // Put on the classpath only; applied below when Firebase is configured.
+    id("com.google.gms.google-services") apply false
+}
+
+// Push notifications are optional. Drop the customer's google-services.json
+// into android/app/ to enable FCM; without it the app relies on its WebSocket.
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
 }
 
 android {
@@ -20,11 +28,10 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
+        // Change to your own reverse-domain ID before publishing (see docs/CLIENT.md).
         applicationId = "com.example.optional_mail_client"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        // flutter_secure_storage and Firebase Messaging need API 24+.
+        minSdk = maxOf(flutter.minSdkVersion, 24)
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
@@ -32,8 +39,8 @@ android {
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
+            // Debug keys only so `flutter run --release` works locally. Configure
+            // a real signing config before publishing (see docs/CLIENT.md).
             signingConfig = signingConfigs.getByName("debug")
         }
     }
