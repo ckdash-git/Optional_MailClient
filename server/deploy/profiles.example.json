@@ -1,0 +1,12 @@
+{
+  "example.com": {
+    "incoming": { "protocol": "imap", "host": "imap.example.com", "port": 993, "security": "tls" },
+    "outgoing": { "host": "smtp.example.com", "port": 465, "security": "tls" },
+    "caldav_url": "https://dav.example.com/",
+    "carddav_url": "https://dav.example.com/"
+  },
+  "legacy.example.org": {
+    "incoming": { "protocol": "pop3", "host": "pop.legacy.example.org", "port": 995, "security": "tls" },
+    "outgoing": { "host": "smtp.legacy.example.org", "port": 587, "security": "starttls" }
+  }
+}
