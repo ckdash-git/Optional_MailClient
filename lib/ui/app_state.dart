@@ -17,6 +17,7 @@ class AppState extends ChangeNotifier {
   String _folder = 'INBOX';
   HomeTab _tab = HomeTab.mail;
   bool _disposed = false;
+  int _openRequest = 0;
   int _gen = 0;
 
   List<Account> get accounts => _accounts;
@@ -26,11 +27,20 @@ class AppState extends ChangeNotifier {
   String get folder => _folder;
   HomeTab get tab => _tab;
 
+  /// Bumped whenever something (a tapped push notification) asks to open a mailbox.
+  int get openRequest => _openRequest;
+
   Account? get selectedAccount {
     for (final a in _accounts) {
       if (a.id == _selectedId) return a;
     }
     return _accounts.isEmpty ? null : _accounts.first;
+  }
+
+  /// Stable position of an account, for colour coding.
+  int accountIndex(String id) {
+    final i = _accounts.indexWhere((a) => a.id == id);
+    return i < 0 ? 0 : i;
   }
 
   Account? accountById(String id) {
@@ -89,6 +99,7 @@ class AppState extends ChangeNotifier {
     _selectedId = accountId;
     _folder = folder;
     _tab = HomeTab.mail;
+    _openRequest++;
     _notify();
   }
 

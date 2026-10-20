@@ -52,7 +52,10 @@ List<Folder> sortFolders(List<Folder> folders) {
 }
 
 class MailScreen extends StatefulWidget {
-  const MailScreen({super.key});
+  const MailScreen({super.key, this.pushed = false});
+
+  /// iOS: opened from the Mailboxes screen, so it shows a back button instead of the drawer.
+  final bool pushed;
 
   @override
   State<MailScreen> createState() => _MailScreenState();
@@ -170,7 +173,7 @@ class _MailScreenState extends State<MailScreen> {
           ),
         ],
       ),
-      drawer: wide
+      drawer: wide || widget.pushed
           ? null
           : Drawer(
               child: SafeArea(child: Builder(builder: pane)),
@@ -290,7 +293,7 @@ class FolderPane extends StatelessWidget {
             child: Text('Accounts', style: theme.textTheme.titleSmall),
           ),
         ),
-        for (final a in accounts)
+        for (final (i, a) in accounts.indexed)
           ListTile(
             shape: shape,
             selected: a.id == selectedAccount.id,
@@ -300,6 +303,7 @@ class FolderPane extends StatelessWidget {
               seed: a.email,
               radius: 16,
               coded: true,
+              colorIndex: i,
             ),
             title: Text(a.label, overflow: TextOverflow.ellipsis),
             subtitle: a.label == a.email

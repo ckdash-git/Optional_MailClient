@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:flutter/cupertino.dart' show CupertinoSliverNavigationBar;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -58,6 +59,12 @@ const _system = <(Color, Color)>[
   (Color(0xFF00A5A8), Color(0xFF40C8E0)), // teal
   (Color(0xFFFF2D55), Color(0xFFFF375F)), // pink
 ];
+
+/// The n-th system colour; used for accounts so two accounts never share one.
+Color systemColorAt(int index, Brightness b) {
+  final (light, dark) = _system[index % _system.length];
+  return b == Brightness.dark ? dark : light;
+}
 
 Color systemColor(String seed, Brightness b) {
   var hash = 0;
@@ -400,4 +407,20 @@ class _GlassItem extends StatelessWidget {
       ),
     );
   }
+}
+
+/// iOS large collapsing title. The bar takes the app's ground colour (translucent, so content
+/// blurs under it) because the Cupertino default ignores the Material dark theme.
+Widget largeTitleBar(
+  BuildContext context,
+  String title, {
+  String? previousPageTitle,
+}) {
+  final t = Palette.of(Theme.of(context).brightness);
+  return CupertinoSliverNavigationBar(
+    largeTitle: Text(title),
+    previousPageTitle: previousPageTitle,
+    backgroundColor: t.ground.withValues(alpha: 0.88),
+    border: Border(bottom: BorderSide(color: t.line, width: 0.5)),
+  );
 }

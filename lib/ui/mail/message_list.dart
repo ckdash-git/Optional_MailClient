@@ -423,12 +423,16 @@ class MessageTile extends StatelessWidget {
     required this.onToggleStar,
     super.key,
     this.showRecipients = false,
+    this.accent,
   });
 
   final MessageSummary message;
   final VoidCallback onTap;
-  final VoidCallback onToggleStar;
+  final VoidCallback? onToggleStar;
   final bool showRecipients;
+
+  /// Colour of the account this message belongs to (shown as a thin edge bar in merged lists).
+  final Color? accent;
 
   @override
   Widget build(BuildContext context) {
@@ -451,7 +455,7 @@ class MessageTile extends StatelessWidget {
       if (m.hasAttachments) 'Has attachments',
     ].join('. ');
 
-    return Semantics(
+    final tile = Semantics(
       container: true,
       button: true,
       label: semantics,
@@ -561,17 +565,35 @@ class MessageTile extends StatelessWidget {
                   ),
                 ),
               ),
-              IconButton(
-                tooltip: m.flagged ? 'Remove star' : 'Star',
-                isSelected: m.flagged,
-                onPressed: onToggleStar,
-                icon: const Icon(Icons.star_outline),
-                selectedIcon: const Icon(Icons.star, color: Color(0xFFFF9F0A)),
-              ),
+              if (onToggleStar != null)
+                IconButton(
+                  tooltip: m.flagged ? 'Remove star' : 'Star',
+                  isSelected: m.flagged,
+                  onPressed: onToggleStar,
+                  icon: const Icon(Icons.star_outline),
+                  selectedIcon: const Icon(
+                    Icons.star,
+                    color: Color(0xFFFF9F0A),
+                  ),
+                ),
             ],
           ),
         ),
       ),
+    );
+    if (accent == null) return tile;
+    return Stack(
+      children: [
+        tile,
+        Positioned.fill(
+          child: Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: ExcludeSemantics(
+              child: Container(width: 3, height: 44, color: accent),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

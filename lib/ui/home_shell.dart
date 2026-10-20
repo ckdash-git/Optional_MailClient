@@ -9,6 +9,7 @@ import 'package:optional_mail_client/ui/contacts/contacts_screen.dart';
 import 'package:optional_mail_client/ui/design.dart';
 import 'package:optional_mail_client/ui/format.dart';
 import 'package:optional_mail_client/ui/mail/mail_screen.dart';
+import 'package:optional_mail_client/ui/mail/mailboxes_screen.dart';
 import 'package:optional_mail_client/ui/scope.dart';
 import 'package:optional_mail_client/ui/settings/settings_screen.dart';
 import 'package:optional_mail_client/ui/widgets/states.dart';
@@ -122,7 +123,11 @@ class _HomeShellState extends State<HomeShell> {
   final _visited = <HomeTab>{HomeTab.mail};
 
   Widget _tab(HomeTab tab) => switch (tab) {
-    HomeTab.mail => const MailScreen(),
+    // iOS phones start Mail at "Mailboxes"; everywhere else keeps the folder drawer or pane.
+    HomeTab.mail =>
+      isIOS(context) && MediaQuery.sizeOf(context).width < 840
+          ? const MailboxesScreen()
+          : const MailScreen(),
     HomeTab.calendar => const CalendarScreen(),
     HomeTab.contacts => const ContactsScreen(),
     HomeTab.settings => const SettingsScreen(),

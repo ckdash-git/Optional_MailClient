@@ -22,6 +22,9 @@ bar on iOS, and Material 3 on Android. Commands run from the repository root in 
 - [x] G6 The web build compiles in release mode.
   CHECK: /opt/sdk/flutter/bin/flutter build web --release --no-web-resources-cdn --suppress-analytics 2>&1 | tail -3
   EXPECT: Built build/web
+- [x] G8 iOS Mailboxes flow: merged Recents order, account to folders to inbox with back button; Android keeps the drawer.
+  CHECK: /opt/sdk/flutter/bin/flutter test test/mailboxes_test.dart --suppress-analytics 2>&1 | tail -1
+  EXPECT: All tests passed!
 - [x] G7 DESIGN.md exists and records the tokens.
   CHECK: grep -q 'signal red' DESIGN.md && echo GATE_DESIGN_OK
   EXPECT: GATE_DESIGN_OK
@@ -34,4 +37,4 @@ bar on iOS, and Material 3 on Android. Commands run from the repository root in 
 
 ## Last run
 
-All 7 runnable gates met (G1-G7). M1-M3 stay open: no iOS Simulator or Android emulator on this Linux host, and the owner has not yet approved the screenshots.
+All 8 runnable gates met (G1-G8), 35 tests. M1-M3 stay open: no iOS Simulator or Android emulator on this Linux host, and the owner has not yet approved the screenshots.

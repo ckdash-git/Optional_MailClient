@@ -41,7 +41,19 @@ columns line up. Unread rows are bold; read rows are regular.
 2. **The timetable agenda.** Each event is a row: start time bold, end time muted, a 3 pt vertical
    rule in the calendar's colour, then title and place.
 
+## Structure (iOS phones)
+
+Mail starts at **Mailboxes**, as in iOS Mail: a large collapsing title, an inset grouped list of
+accounts (colour-coded avatar, unread count, delivery status), then **Recents**, a merged
+newest-first list across accounts with a 3 pt edge bar in each account's colour. An account opens
+its folder list (large title, "‹ Mailboxes" back chevron); a folder opens the inbox as a pushed
+screen with the system back gesture. Settings has a large title; Calendar keeps an inline title,
+as Apple Calendar does. The delivery status is truthful: "Instant" for IMAP accounts without an error,
+"Checks every few minutes" for POP3, and the error text when the master reports one.
+
+Android and wide layouts keep the folder drawer or side pane and the Material 3 bars.
+
 ## Not built yet
 
-Large collapsing titles and a "Mailboxes" root screen on iOS (the folder drawer is still the
-Material one), a unified Recents list, filter chips, and Dynamic Type verification on a device.
+Filter chips (Unread, Starred), large titles on Contacts, a paged server-side Recents (today it
+merges one page per account), and Dynamic Type verification on a device.

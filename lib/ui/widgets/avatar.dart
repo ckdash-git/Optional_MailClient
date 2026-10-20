@@ -11,6 +11,7 @@ class InitialsAvatar extends StatelessWidget {
     this.seed,
     this.radius = 20,
     this.coded = false,
+    this.colorIndex,
   });
 
   final String name;
@@ -18,11 +19,18 @@ class InitialsAvatar extends StatelessWidget {
   final double radius;
   final bool coded;
 
+  /// Position of the account in the account list; takes precedence over the seed's hash.
+  final int? colorIndex;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final t = Palette.of(theme.brightness);
-    final bg = coded ? systemColor(seed ?? name, theme.brightness) : t.grouped;
+    final bg = !coded
+        ? t.grouped
+        : colorIndex != null
+        ? systemColorAt(colorIndex!, theme.brightness)
+        : systemColor(seed ?? name, theme.brightness);
     final fg = coded ? Colors.white : t.mute;
     return ExcludeSemantics(
       child: CircleAvatar(

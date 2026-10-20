@@ -129,6 +129,13 @@ void main() {
     );
   });
 
+  test('accounts take distinct system colours by position', () {
+    for (final b in Brightness.values) {
+      expect(systemColorAt(0, b), isNot(systemColorAt(1, b)));
+      expect(systemColorAt(0, b), systemColorAt(6, b)); // wraps after six
+    }
+  });
+
   testWidgets('iOS gets the liquid-glass tab bar, no Material NavigationBar', (
     tester,
   ) async {
