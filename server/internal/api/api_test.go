@@ -32,6 +32,7 @@ import (
 
 type env struct {
 	t     *testing.T
+	h     http.Handler
 	srv   *httptest.Server
 	st    *store.Store
 	imap  model.Endpoint
@@ -75,7 +76,8 @@ func setup(t *testing.T) *env {
 	s := &Server{Store: e.st, Vault: v, Guard: guard, Mail: dialer, Pool: pool, HTTP: davClient, Hub: hub, Watch: mgr, Log: log,
 		Discover:    &discover.Discoverer{Profiles: map[string]model.Settings{"corp.test": profile}, HTTP: http.DefaultClient},
 		AllowCustom: false}
-	e.srv = httptest.NewServer(s.Handler())
+	e.h = s.Handler()
+	e.srv = httptest.NewServer(e.h)
 	t.Cleanup(e.srv.Close)
 	ctx, cancel := context.WithCancel(context.Background())
 	t.Cleanup(cancel)
