@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:optional_mail_client/api/client.dart';
 import 'package:optional_mail_client/ui/calendar/event_editor.dart';
+import 'package:optional_mail_client/ui/design.dart';
 import 'package:optional_mail_client/ui/format.dart';
 import 'package:optional_mail_client/ui/scope.dart';
 import 'package:optional_mail_client/ui/widgets/account_menu.dart';
@@ -367,7 +368,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final scaler = MediaQuery.textScalerOf(context);
-    final color = parseCssColor(_calendar?.color ?? '') ?? scheme.primary;
+    final color =
+        parseCssColor(_calendar?.color ?? '') ??
+        systemColor(_calendar?.id ?? 'calendar', theme.brightness);
     final monthDays =
         _byDay.keys
             .where((d) => d.year == _focused.year && d.month == _focused.month)
@@ -558,27 +561,82 @@ class _EventTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final e = event;
-    final subtitle = [
-      eventTimeLabel(e),
-      if (e.location.isNotEmpty) e.location,
-    ].join(' · ');
-    return ListTile(
-      onTap: onTap,
-      leading: ExcludeSemantics(
-        child: Container(
-          width: 6,
-          height: 36,
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(3),
+    final theme = Theme.of(context);
+    final start = e.allDay ? 'All day' : formatTime(e.start);
+    return Semantics(
+      container: true,
+      button: true,
+      label: [
+        e.summary,
+        eventTimeLabel(e),
+        if (e.location.isNotEmpty) e.location,
+      ].join('. '),
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Timetable column: departure time bold, arrival muted, figures aligned.
+                SizedBox(
+                  width: 64,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        start,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          fontFeatures: const [FontFeature.tabularFigures()],
+                        ),
+                      ),
+                      if (!e.allDay)
+                        Text(
+                          formatTime(e.end),
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                ExcludeSemantics(
+                  child: Container(
+                    width: 3,
+                    margin: const EdgeInsets.only(right: 12),
+                    color: color,
+                  ),
+                ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        e.summary.isEmpty ? '(no title)' : e.summary,
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      if (e.location.isNotEmpty)
+                        Text(
+                          e.location,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                if (e.recurrence.isNotEmpty)
+                  const Icon(Icons.repeat, size: 18, semanticLabel: 'Repeats'),
+              ],
+            ),
           ),
         ),
       ),
-      title: Text(e.summary.isEmpty ? '(no title)' : e.summary),
-      subtitle: Text(subtitle),
-      trailing: e.recurrence.isEmpty
-          ? null
-          : const Icon(Icons.repeat, semanticLabel: 'Repeats'),
     );
   }
 }

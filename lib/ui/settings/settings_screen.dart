@@ -153,7 +153,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             header('Accounts'),
             for (final a in state.accounts)
               ListTile(
-                leading: InitialsAvatar(name: a.label, seed: a.email),
+                leading: InitialsAvatar(
+                  name: a.label,
+                  seed: a.email,
+                  coded: true,
+                ),
                 title: Text(a.label, overflow: TextOverflow.ellipsis),
                 subtitle: Text(
                   [

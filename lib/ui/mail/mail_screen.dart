@@ -295,7 +295,12 @@ class FolderPane extends StatelessWidget {
             shape: shape,
             selected: a.id == selectedAccount.id,
             selectedTileColor: scheme.secondaryContainer,
-            leading: InitialsAvatar(name: a.label, seed: a.email, radius: 16),
+            leading: InitialsAvatar(
+              name: a.label,
+              seed: a.email,
+              radius: 16,
+              coded: true,
+            ),
             title: Text(a.label, overflow: TextOverflow.ellipsis),
             subtitle: a.label == a.email
                 ? null

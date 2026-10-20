@@ -19,6 +19,7 @@ class AccountMenuButton extends StatelessWidget {
         name: selected.label,
         seed: selected.email,
         radius: 14,
+        coded: true,
       ),
       onSelected: state.selectAccount,
       itemBuilder: (context) => [

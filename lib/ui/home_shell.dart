@@ -6,6 +6,7 @@ import 'package:optional_mail_client/api/realtime.dart';
 import 'package:optional_mail_client/ui/app_state.dart';
 import 'package:optional_mail_client/ui/calendar/calendar_screen.dart';
 import 'package:optional_mail_client/ui/contacts/contacts_screen.dart';
+import 'package:optional_mail_client/ui/design.dart';
 import 'package:optional_mail_client/ui/format.dart';
 import 'package:optional_mail_client/ui/mail/mail_screen.dart';
 import 'package:optional_mail_client/ui/scope.dart';
@@ -196,6 +197,37 @@ class _HomeShellState extends State<HomeShell> {
                 context: context,
                 removeLeft: true,
                 child: body,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    if (isIOS(context)) {
+      // Content runs under the floating glass bar; scrollables inherit the extra inset.
+      final mq = MediaQuery.of(context);
+      final inset =
+          GlassTabBar.height +
+          (mq.padding.bottom > 0 ? mq.padding.bottom : 12) +
+          12;
+      return Material(
+        child: Stack(
+          children: [
+            MediaQuery(
+              data: mq.copyWith(
+                padding: mq.padding.copyWith(bottom: inset),
+                viewPadding: mq.viewPadding.copyWith(bottom: inset),
+              ),
+              child: body,
+            ),
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: GlassTabBar(
+                items: _destinations.values.toList(),
+                selected: state.tab.index,
+                onSelected: (i) => state.selectTab(HomeTab.values[i]),
               ),
             ),
           ],

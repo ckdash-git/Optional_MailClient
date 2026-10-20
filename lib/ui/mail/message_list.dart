@@ -323,7 +323,7 @@ class _MessageListState extends State<MessageList> {
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.only(bottom: 88),
               itemCount: visible.length + 1,
-              separatorBuilder: (_, _) => const Divider(height: 1, indent: 72),
+              separatorBuilder: (_, _) => const Divider(height: 1, indent: 76),
               itemBuilder: (context, i) {
                 if (i == visible.length) return _footer();
                 final m = visible[i];
@@ -458,9 +458,27 @@ class MessageTile extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsetsDirectional.fromSTEB(16, 10, 4, 10),
+          padding: const EdgeInsetsDirectional.fromSTEB(6, 10, 4, 10),
           child: Row(
             children: [
+              // iOS-style unread marker in the leading gutter.
+              SizedBox(
+                width: 14,
+                child: unread
+                    ? ExcludeSemantics(
+                        child: Center(
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: scheme.primary,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const SizedBox.square(dimension: 9),
+                          ),
+                        ),
+                      )
+                    : null,
+              ),
+              const SizedBox(width: 4),
               ExcludeSemantics(
                 child: InitialsAvatar(
                   name: showRecipients && m.to.isNotEmpty
@@ -548,7 +566,7 @@ class MessageTile extends StatelessWidget {
                 isSelected: m.flagged,
                 onPressed: onToggleStar,
                 icon: const Icon(Icons.star_outline),
-                selectedIcon: Icon(Icons.star, color: Colors.amber.shade700),
+                selectedIcon: const Icon(Icons.star, color: Color(0xFFFF9F0A)),
               ),
             ],
           ),

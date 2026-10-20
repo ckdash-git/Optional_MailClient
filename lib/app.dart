@@ -3,6 +3,7 @@ import 'package:optional_mail_client/api/client.dart';
 import 'package:optional_mail_client/api/push.dart';
 import 'package:optional_mail_client/api/realtime.dart';
 import 'package:optional_mail_client/api/session.dart';
+import 'package:optional_mail_client/ui/design.dart';
 import 'package:optional_mail_client/ui/home_shell.dart';
 import 'package:optional_mail_client/ui/scope.dart';
 import 'package:optional_mail_client/ui/sign_in_screen.dart';
@@ -10,21 +11,6 @@ import 'package:optional_mail_client/ui/widgets/states.dart';
 
 const appName = 'Optional Mail';
 const appVersion = '1.0.0';
-
-ThemeData buildTheme(Brightness brightness) {
-  final scheme = ColorScheme.fromSeed(
-    seedColor: const Color(0xFF2F5DA8),
-    brightness: brightness,
-  );
-  return ThemeData(
-    colorScheme: scheme,
-    snackBarTheme: const SnackBarThemeData(behavior: SnackBarBehavior.floating),
-    listTileTheme: const ListTileThemeData(minVerticalPadding: 8),
-    inputDecorationTheme: const InputDecorationTheme(
-      floatingLabelBehavior: FloatingLabelBehavior.auto,
-    ),
-  );
-}
 
 class MailApp extends StatefulWidget {
   const MailApp({
@@ -81,8 +67,8 @@ class _MailAppState extends State<MailApp> {
         title: appName,
         navigatorKey: _navigator,
         debugShowCheckedModeBanner: false,
-        theme: buildTheme(Brightness.light),
-        darkTheme: buildTheme(Brightness.dark),
+        theme: buildTheme(Brightness.light, platform: previewPlatform()),
+        darkTheme: buildTheme(Brightness.dark, platform: previewPlatform()),
         themeMode: _session.themeMode,
         // Session state sits above the Navigator so pushed routes see it.
         builder: (context, child) => _session.isSignedIn

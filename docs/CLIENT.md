@@ -101,3 +101,19 @@ dependency change.
 - Repeat rules of recurring events are shown but can't be edited (a v1 API limit).
 - A swipe to archive or delete is sent to the server once its Undo snack bar
   closes. If the app is killed within those seconds, the action is lost.
+
+
+## iOS Simulator and Android emulator screenshots
+
+The design is adaptive, so check both on real runtimes (a Mac with Xcode is required for iOS):
+
+```bash
+flutter run -d "iPhone 16"                      # liquid-glass tab bar, iOS controls
+xcrun simctl io booted screenshot ios-inbox.png
+xcrun simctl ui booted appearance dark          # then screenshot again for Dark Mode
+flutter run -d emulator-5554                    # Material 3 on Android
+adb exec-out screencap -p > android-inbox.png
+```
+
+On the web build, `?platform=ios` or `?platform=android` previews each design in a browser
+(for quick looks only; fonts and blur differ from a device).
