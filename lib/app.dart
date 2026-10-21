@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:optional_mail_client/api/cache.dart';
 import 'package:optional_mail_client/api/client.dart';
 import 'package:optional_mail_client/api/push.dart';
 import 'package:optional_mail_client/api/realtime.dart';
@@ -17,10 +18,14 @@ class MailApp extends StatefulWidget {
     required this.api,
     super.key,
     this.push,
+    this.cache,
     this.realtimeFactory = Realtime.new,
   });
 
   final ApiClient api;
+
+  /// Offline message cache; in memory when null (tests, web).
+  final MailCache? cache;
   final PushService? push;
   final Realtime Function(ApiClient api) realtimeFactory;
 
@@ -31,6 +36,7 @@ class MailApp extends StatefulWidget {
 class _MailAppState extends State<MailApp> {
   final _navigator = GlobalKey<NavigatorState>();
   SessionStatus? _lastStatus;
+  late final MailCache _cache = widget.cache ?? MailCache(MemoryBlobStore());
 
   Session get _session => widget.api.session;
 
@@ -60,6 +66,7 @@ class _MailAppState extends State<MailApp> {
   Widget build(BuildContext context) => AppScope(
     api: widget.api,
     push: widget.push,
+    cache: _cache,
     realtimeFactory: widget.realtimeFactory,
     child: ListenableBuilder(
       listenable: _session,

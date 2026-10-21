@@ -74,6 +74,7 @@ class _SessionHostState extends State<SessionHost> {
       if (e.type == 'account.error' || e.isResync) {
         unawaited(_state.loadAccounts());
       }
+      if (e.type == 'mail.new') _announce(e);
     });
     final push = _scope.push;
     if (push != null) {
@@ -84,6 +85,42 @@ class _SessionHostState extends State<SessionHost> {
         if (mounted) _onPushOpen();
       });
     }
+  }
+
+  DateTime? _lastAnnounced;
+
+  /// In-app banner for new mail the user isn't already looking at. Closed-app
+  /// notifications come from push; this covers the app being open.
+  void _announce(RealtimeEvent e) {
+    final account = _state.accountById(e.accountId);
+    if (account == null) return;
+    final folder = e.folder.isEmpty ? 'INBOX' : e.folder;
+    final viewing =
+        _state.tab == HomeTab.mail &&
+        _state.selectedAccount?.id == account.id &&
+        _state.folder == folder &&
+        (widget.navigatorKey.currentState?.canPop() ?? false) == false;
+    final now = DateTime.now();
+    final recent =
+        _lastAnnounced != null &&
+        now.difference(_lastAnnounced!) < const Duration(seconds: 4);
+    if (viewing || recent) return;
+    _lastAnnounced = now;
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    messenger
+      ?..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text('New mail in ${account.label}'),
+          action: SnackBarAction(
+            label: 'Open',
+            onPressed: () {
+              widget.navigatorKey.currentState?.popUntil((r) => r.isFirst);
+              _state.openMailbox(account.id, folder: folder);
+            },
+          ),
+        ),
+      );
   }
 
   void _onPushOpen() {

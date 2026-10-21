@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:optional_mail_client/api/cache.dart';
 import 'package:optional_mail_client/api/client.dart';
 import 'package:optional_mail_client/api/session.dart';
 import 'package:optional_mail_client/ui/scope.dart';
@@ -27,6 +28,7 @@ Future<void> _tapSignIn(WidgetTester tester) async {
 Widget _app(ApiClient api) => AppScope(
   api: api,
   push: null,
+  cache: MailCache(MemoryBlobStore()),
   child: const MaterialApp(home: SignInScreen()),
 );
 

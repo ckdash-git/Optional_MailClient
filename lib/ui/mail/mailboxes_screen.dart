@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/cupertino.dart' show CupertinoButton, CupertinoIcons;
 import 'package:flutter/material.dart';
 import 'package:optional_mail_client/api/client.dart';
 import 'package:optional_mail_client/ui/design.dart';
@@ -7,6 +8,7 @@ import 'package:optional_mail_client/ui/format.dart';
 import 'package:optional_mail_client/ui/mail/mail_screen.dart';
 import 'package:optional_mail_client/ui/mail/message_list.dart';
 import 'package:optional_mail_client/ui/mail/message_screen.dart';
+import 'package:optional_mail_client/ui/mail/search_screen.dart';
 import 'package:optional_mail_client/ui/scope.dart';
 import 'package:optional_mail_client/ui/widgets/avatar.dart';
 import 'package:optional_mail_client/ui/widgets/states.dart';
@@ -176,7 +178,21 @@ class _MailboxesScreenState extends State<MailboxesScreen> {
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
-            largeTitleBar(context, 'Mailboxes'),
+            largeTitleBar(
+              context,
+              'Mailboxes',
+              trailing: CupertinoButton(
+                padding: EdgeInsets.zero,
+                minimumSize: const Size.square(44),
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(builder: (_) => const SearchScreen()),
+                ),
+                child: const Icon(
+                  CupertinoIcons.search,
+                  semanticLabel: 'Search',
+                ),
+              ),
+            ),
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),

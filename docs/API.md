@@ -181,3 +181,14 @@ so no subject or sender passes through Google or Apple.
 ## Health
 
 `GET /healthz` → `200 ok` (process up). `GET /readyz` → `200` once the database is open.
+
+## Wanted by the client (not in v1)
+
+The app works without these; each one would let it do more.
+
+- `GET /v1/accounts/{aid}/messages?folder=&q=<text>`: server-side search. Today the app
+  searches only what it has saved on the device.
+- `POST /v1/accounts/{aid}/messages/{id}/invite/reply` with `{response: accepted|declined|tentative}`:
+  sends the iTIP reply for a meeting invitation. Today the app can only add the event to
+  the calendar.
+- A `unread` count across accounts (for an app badge) on `GET /v1/me`.

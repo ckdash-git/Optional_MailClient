@@ -48,11 +48,15 @@ Install Flutter (stable) and run `flutter pub get`. Then:
 
 | platform | command | notes |
 | --- | --- | --- |
-| Android | `flutter build appbundle` | minSdk 24. Before you publish, set `applicationId` and `namespace` in `android/app/build.gradle.kts` and add a release signing config. |
+| Android | `flutter build apk --release` / `flutter build appbundle` | minSdk 24. Before you publish, set `applicationId` and `namespace` in `android/app/build.gradle.kts` and add a release signing config. |
 | iOS | `flutter build ipa` | Set the bundle id and team in Xcode (`ios/Runner.xcworkspace`). |
 | macOS | `flutter build macos` | Turn on Keychain Sharing in Xcode so that `flutter_secure_storage` works. The entitlements include `network.client` and `keychain-access-groups`. |
 | Windows / Linux | `flutter build windows` / `flutter build linux` | Linux needs `libsecret-1-dev` to build and a running Secret Service, such as GNOME Keyring or KWallet. |
 | Web | `flutter build web` | Serve it over HTTPS. Web builds have no push. |
+
+CI builds an unsigned release APK (Android) and an unsigned `Runner.app` (iOS, on a macOS
+runner) on every push and uploads them as workflow artifacts. Signing and store upload stay
+with whoever owns the developer accounts.
 
 Checks: `flutter analyze` (strict options in `analysis_options.yaml`), `flutter test`
 and `./scripts/check-app-licenses.sh`.
@@ -93,11 +97,34 @@ plain text to `build/web/assets/NOTICES`, and mobile builds bundle the same text
 zlib-compressed as `flutter_assets/NOTICES.Z`. Regenerate the file after every
 dependency change.
 
+## Offline, search and invitations
+
+- **Offline cache** (`lib/api/cache.dart`). Each folder page the user has seen (newest 200)
+  and each message they have opened (newest 100 per account, already sanitised by the master)
+  is kept in the app's private support directory (`path_provider`), one file per entry. Lists
+  and opened messages show from it when the master is unreachable, with an "Offline" banner.
+  Attachments, passwords and tokens are never cached. The cache is wiped on sign-out, when an
+  account is removed, and by `Session.wipeHooks`. On web it lives in memory only. The OS
+  sandbox protects the files; use full-disk encryption (the default on current iOS and
+  Android) for the rest.
+- **Search** (`SearchScreen`) matches words against subject, sender and recipients of the
+  saved messages, across accounts, with `is:unread`, `is:starred` and `has:attachment`.
+- **Meeting invitations** (`InviteCard`). A `text/calendar` attachment is parsed on the
+  device and shown as a card with an "Add to calendar" button (CalDAV, through
+  `PUT /v1/accounts/{aid}/events`).
+- **New-mail banner.** A `mail.new` event for a folder the user isn't looking at shows
+  "New mail in <account>" with an Open action. Notifications while the app is closed come
+  from FCM (see below).
+
 ## Known limits (v1)
 
 - The app's text is in English only; dates use the `en_US` format.
 - A forwarded message includes the original text but not its attachments.
-- Mail has no search and no offline cache; every list is fetched live.
+- Search covers only messages saved on this device (see "Offline, search and invitations").
+  The master has no search endpoint yet.
+- Meeting invitations can be added to the calendar, but Accept / Decline replies need a
+  master endpoint that does not exist yet. Times sent in a named time zone (`TZID`) are
+  read on the device's clock and the card warns the user.
 - Repeat rules of recurring events are shown but can't be edited (a v1 API limit).
 - A swipe to archive or delete is sent to the server once its Undo snack bar
   closes. If the app is killed within those seconds, the action is lost.
