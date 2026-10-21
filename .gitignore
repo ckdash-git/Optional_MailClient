@@ -43,5 +43,8 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
-pubspec.lock
-ios/Runner.xcodeproj/project.pbxproj
+
+# Customer-supplied Firebase config (see docs/CLIENT.md)
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+macos/Runner/GoogleService-Info.plist

@@ -1,11 +1,11 @@
 {
-    "name": "optional_mail_client",
-    "short_name": "optional_mail_client",
+    "name": "Optional Mail",
+    "short_name": "Optional Mail",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "Mail, calendar and contacts.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

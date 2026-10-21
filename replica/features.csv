@@ -1,0 +1,44 @@
+id,area,feature,priority,original,milestone
+F01,auth,Sign in with email + password verified against the mail server,must,yes,M1
+F02,auth,Autodiscover server settings (admin profiles; Thunderbird ISPDB; RFC 6186 SRV; RFC 6764 well-known),must,yes,M1
+F03,auth,Manual server settings (IMAP/POP3 + SMTP; TLS/STARTTLS),must,yes,M1
+F04,auth,Per-device sessions; rotating refresh tokens; revoke a device,must,no,M1
+F05,mail,Folder list with unread counts and roles,must,yes,M1
+F06,mail,Message list newest first with paging,must,yes,M1
+F07,mail,Read message; sanitized HTML; remote images blocked by default,must,yes,M1
+F08,mail,Attachments download,must,yes,M1
+F09,mail,Mark read/unread; star,must,yes,M1
+F10,mail,Delete (to Trash); move to folder,must,yes,M1
+F11,mail,Compose / reply / forward with attachments; copy to Sent,must,yes,M1
+F12,mail,POP3 accounts with server-side read/flag state,must,yes,M1
+F13,push,Real-time new-mail push (IMAP IDLE / POP3 poll -> WebSocket + FCM),must,no,M1
+F14,calendar,List calendars; agenda for a date range,must,yes,M2
+F15,calendar,Create / edit / delete events with ETag conflict detection,must,yes,M2
+F16,contacts,List address books and contacts; search,must,yes,M2
+F17,contacts,Create / edit / delete contacts,must,yes,M2
+F18,push,Calendar and contact change push,must,no,M2
+F19,accounts,Multiple accounts per user,should,yes,M2
+F20,settings,Light / dark theme following the system,should,yes,M1
+F21,mail,Search (IMAP SEARCH),should,yes,M3
+F22,auth,OAuth2 (XOAUTH2) for Gmail and Microsoft 365,should,yes,M3
+F23,mail,Offline cache on device (encrypted),should,yes,M3
+F24,mail,Unified inbox across accounts,should,yes,M3
+F25,mail,JMAP adapter,could,no,M4
+F26,mail,Exchange / Microsoft Graph adapter,could,no,M4
+F27,calendar,Recurring-event editing,could,yes,M4
+F28,push,Direct APNs (without FCM) for customers who exclude Google,could,no,M4
+F29,push,Push health status per account (last event; reason when not instant; one-tap fix) and in-app errors,must,no,M1
+F30,push,One push connection per account: IMAP NOTIFY (RFC 5465) else IDLE on INBOX; dead-connection watchdog with poll fallback,must,no,M1
+F31,push,iOS relay sends content-free wake-ups only; self-hostable open-source relay option,should,no,M2
+F32,push,UnifiedPush / ntfy distributor option on Android (no FCM),could,no,M3
+F33,calendar,Accept / decline iMIP invitations from the message view,should,no,M2
+F34,settings,Simple defaults with an Advanced section; keep-previous-layout option on redesigns,should,no,M1
+F35,accounts,Account rail; unified Sent/Drafts/Trash/Spam; keep-accounts-separate mode,should,no,M3
+F36,mail,Move / copy messages between accounts,could,no,M3
+F37,auth,Setup diagnostics naming the failing step; settings import that keeps notifications on,should,no,M1
+F38,mail,Send later; undo send; select all,should,no,M3
+F39,mail,Local rules plus Sieve where supported; sender blocking (not paywalled),should,no,M3
+F40,settings,App PIN / biometric lock,should,no,M3
+F41,settings,Accessibility pass (TalkBack / VoiceOver) and keyboard shortcuts,should,no,M3
+F42,settings,Telemetry opt-in only (off by default),must,no,M1
+F43,mail,HTML signatures,could,no,M4
