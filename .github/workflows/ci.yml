@@ -56,3 +56,43 @@ jobs:
         run: |
           out=$(docker run --rm master:ci 2>&1 || true)
           echo "$out" | grep -q MASTER_VAULT_KEYS
+
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - name: build release APK
+        run: flutter build apk --release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
+
+  ios:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - name: build release app (unsigned)
+        run: flutter build ios --release --no-codesign
+      - name: package the unsigned app
+        run: ditto -c -k --keepParent build/ios/iphoneos/Runner.app Runner-unsigned.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ios-app-unsigned
+          path: Runner-unsigned.zip
+          if-no-files-found: error

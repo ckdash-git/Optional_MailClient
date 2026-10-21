@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:optional_mail_client/api/cache.dart';
+import 'package:optional_mail_client/api/cache_open.dart';
 import 'package:optional_mail_client/api/client.dart';
 import 'package:optional_mail_client/api/push.dart';
 import 'package:optional_mail_client/api/session.dart';
@@ -18,9 +20,11 @@ Future<void> main() async {
     onTimeout: () => null,
   );
 
+  final cache = MailCache(await openBlobStore());
   session.wipeHooks.add(wipeTempFiles);
+  session.wipeHooks.add(cache.clear);
   if (push != null) session.wipeHooks.add(push.unregister);
   await session.load();
 
-  runApp(MailApp(api: api, push: push));
+  runApp(MailApp(api: api, push: push, cache: cache));
 }

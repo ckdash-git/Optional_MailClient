@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:optional_mail_client/api/cache.dart';
 import 'package:optional_mail_client/api/client.dart';
 import 'package:optional_mail_client/api/realtime.dart';
 import 'package:optional_mail_client/api/session.dart';
@@ -69,12 +70,13 @@ const testAccount = Account(
 );
 
 /// Wraps [child] with the scopes the screens expect.
-Widget harness(ApiClient api, Widget child) {
+Widget harness(ApiClient api, Widget child, {MailCache? cache}) {
   final state = AppState(api);
   final realtime = Realtime(api);
   return AppScope(
     api: api,
     push: null,
+    cache: cache ?? MailCache(MemoryBlobStore()),
     child: SessionScope(
       state: state,
       realtime: realtime,

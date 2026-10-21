@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:optional_mail_client/api/client.dart';
 import 'package:optional_mail_client/ui/format.dart';
 import 'package:optional_mail_client/ui/mail/compose_screen.dart';
+import 'package:optional_mail_client/ui/mail/invite_card.dart';
 import 'package:optional_mail_client/ui/mail/mail_screen.dart';
 import 'package:optional_mail_client/ui/scope.dart';
 import 'package:optional_mail_client/ui/widgets/attachment_saver.dart';
@@ -74,7 +75,12 @@ class _MessageScreenState extends State<MessageScreen> {
 
   Future<void> _load() async {
     final api = _api;
+    final cache = AppScope.of(context).cache;
     setState(() => _error = null);
+    // A message already read opens instantly and works offline.
+    final saved = await cache.message(widget.account.id, _folder, _summary.id);
+    if (!mounted) return;
+    if (saved != null && _message == null) setState(() => _message = saved);
     try {
       final m = await api.message(
         widget.account.id,
@@ -83,6 +89,7 @@ class _MessageScreenState extends State<MessageScreen> {
       );
       if (!mounted) return;
       setState(() => _message = m);
+      unawaited(cache.saveMessage(widget.account.id, m));
       if (!m.seen) {
         // Opening a message marks it read (GET does not).
         try {
@@ -98,7 +105,8 @@ class _MessageScreenState extends State<MessageScreen> {
         }
       }
     } on Object catch (e) {
-      if (mounted) setState(() => _error = e);
+      // Keep showing the saved copy when the master is unreachable.
+      if (mounted && _message == null) setState(() => _error = e);
     }
   }
 
@@ -406,6 +414,15 @@ class _MessageScreenState extends State<MessageScreen> {
                           'your privacy.',
                       color: scheme.secondaryContainer,
                       onColor: scheme.onSecondaryContainer,
+                    ),
+                  ],
+                  if (inviteAttachment(m) case final invite?) ...[
+                    const SizedBox(height: 12),
+                    InviteCard(
+                      key: ValueKey('invite-${m.id}'),
+                      account: widget.account,
+                      message: m,
+                      attachment: invite,
                     ),
                   ],
                   if (m.attachments.isNotEmpty) ...[

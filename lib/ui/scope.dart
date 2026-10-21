@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:optional_mail_client/api/cache.dart';
 import 'package:optional_mail_client/api/client.dart';
 import 'package:optional_mail_client/api/push.dart';
 import 'package:optional_mail_client/api/realtime.dart';
@@ -10,6 +11,7 @@ class AppScope extends InheritedWidget {
   const AppScope({
     required this.api,
     required this.push,
+    required this.cache,
     required super.child,
     super.key,
     this.realtimeFactory = Realtime.new,
@@ -19,6 +21,9 @@ class AppScope extends InheritedWidget {
 
   /// Creates the per-session WebSocket connection (replaceable in tests).
   final Realtime Function(ApiClient api) realtimeFactory;
+
+  /// Messages saved on this device for offline use and search.
+  final MailCache cache;
 
   /// Null when Firebase is not configured.
   final PushService? push;
@@ -35,6 +40,7 @@ class AppScope extends InheritedWidget {
   bool updateShouldNotify(AppScope oldWidget) =>
       api != oldWidget.api ||
       push != oldWidget.push ||
+      cache != oldWidget.cache ||
       realtimeFactory != oldWidget.realtimeFactory;
 }
 

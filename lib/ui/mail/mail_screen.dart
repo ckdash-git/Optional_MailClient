@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:optional_mail_client/api/client.dart';
 import 'package:optional_mail_client/ui/mail/compose_screen.dart';
 import 'package:optional_mail_client/ui/mail/message_list.dart';
+import 'package:optional_mail_client/ui/mail/search_screen.dart';
 import 'package:optional_mail_client/ui/scope.dart';
 import 'package:optional_mail_client/ui/widgets/account_menu.dart';
 import 'package:optional_mail_client/ui/widgets/avatar.dart';
@@ -172,6 +173,15 @@ class _MailScreenState extends State<MailScreen> {
       appBar: AppBar(
         title: AppBarTitle(title, subtitle: account.email),
         actions: [
+          IconButton(
+            tooltip: 'Search',
+            icon: const Icon(Icons.search),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => SearchScreen(accountId: account.id),
+              ),
+            ),
+          ),
           IconButton(
             tooltip: 'Refresh',
             icon: const Icon(Icons.refresh),

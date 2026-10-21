@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:optional_mail_client/api/cache.dart';
 import 'package:optional_mail_client/api/client.dart';
 import 'package:optional_mail_client/ui/format.dart';
 import 'package:optional_mail_client/ui/mail/message_screen.dart';
@@ -70,9 +71,12 @@ class _MessageListState extends State<MessageList> {
   bool _loadingMore = false;
   Object? _error;
   Object? _moreError;
+  bool _offline =
+      false; // showing saved messages because the master is unreachable
   int _gen = 0;
 
   ApiClient get _api => AppScope.of(context).api;
+  MailCache get _cache => AppScope.of(context).cache;
 
   Folder? get _folderInfo {
     for (final f in widget.folders) {
@@ -97,8 +101,23 @@ class _MessageListState extends State<MessageList> {
     super.initState();
     _scroll.addListener(_onScroll);
     widget.refresh?.addListener(_reload);
-    unawaited(_load());
+    unawaited(_showSaved().then((_) => _load()));
   }
+
+  /// Shows the last saved page right away while the fresh one loads.
+  Future<void> _showSaved() async {
+    final saved = await _cache.page(widget.account.id, widget.folder);
+    if (!mounted || saved == null || _items.isNotEmpty) return;
+    setState(() {
+      _items = saved.messages;
+      _next = saved.next;
+      _loading = false;
+    });
+  }
+
+  void _persist() => unawaited(
+    _cache.savePage(widget.account.id, widget.folder, _items, next: _next),
+  );
 
   @override
   void didChangeDependencies() {
@@ -177,15 +196,19 @@ class _MessageListState extends State<MessageList> {
         _loading = false;
         _error = null;
         _moreError = null;
+        _offline = false;
       });
+      _persist();
     } on Object catch (e) {
       if (!mounted || gen != _gen) return;
+      final unreachable = e is ApiException && e.isNetwork;
       setState(() {
         _loading = false;
-        // Keep showing what we have if a background refresh fails.
+        // Keep showing what we have if a refresh fails.
         if (_items.isEmpty) _error = e;
+        if (_items.isNotEmpty && unreachable) _offline = true;
       });
-      if (_items.isNotEmpty && !merge) showError(context, e);
+      if (_items.isNotEmpty && !merge && !unreachable) showError(context, e);
     }
   }
 
@@ -213,6 +236,7 @@ class _MessageListState extends State<MessageList> {
         ];
         _next = page.nextBefore;
       });
+      _persist();
     } on Object catch (e) {
       if (mounted) setState(() => _moreError = e);
     } finally {
@@ -225,6 +249,7 @@ class _MessageListState extends State<MessageList> {
     setState(() {
       _items = [for (final m in _items) m.id == updated.id ? updated : m];
     });
+    _persist();
   }
 
   void _remove(String id) {
@@ -233,6 +258,7 @@ class _MessageListState extends State<MessageList> {
       _items = _items.where((m) => m.id != id).toList();
       _hidden.remove(id);
     });
+    _persist();
     widget.onChanged?.call();
   }
 
@@ -332,7 +358,7 @@ class _MessageListState extends State<MessageList> {
         _folderInfo?.role == FolderRole.drafts;
     final archive = _archive;
 
-    return RefreshIndicator(
+    final list = RefreshIndicator(
       onRefresh: () => _load(showSpinner: false),
       child: visible.isEmpty
           ? _empty()
@@ -374,6 +400,14 @@ class _MessageListState extends State<MessageList> {
                 );
               },
             ),
+    );
+    if (!_offline) return list;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const _OfflineBanner(),
+        Expanded(child: list),
+      ],
     );
   }
 
@@ -438,6 +472,34 @@ class _MessageListState extends State<MessageList> {
     return const Padding(
       padding: EdgeInsets.all(16),
       child: Center(child: LoadingView(label: 'Loading more messages')),
+    );
+  }
+}
+
+/// Shown over saved messages while the master can't be reached.
+class _OfflineBanner extends StatelessWidget {
+  const _OfflineBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Semantics(
+      liveRegion: true,
+      child: Material(
+        color: scheme.surfaceContainerHighest,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Row(
+            children: [
+              Icon(Icons.cloud_off_outlined, size: 18, color: scheme.onSurface),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text('Offline. Showing messages saved on this device.'),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

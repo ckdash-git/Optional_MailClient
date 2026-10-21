@@ -378,6 +378,21 @@ class MessageSummary {
   final bool hasAttachments;
   final int size;
 
+  /// Same keys as the master sends, so [MessageSummary.fromJson] reads it back.
+  Json toJson() => {
+    'id': id,
+    'folder': folder,
+    'from': from.toJson(),
+    'to': [for (final a in to) a.toJson()],
+    'subject': subject,
+    'date': date.toUtc().toIso8601String(),
+    'seen': seen,
+    'flagged': flagged,
+    'answered': answered,
+    'has_attachments': hasAttachments,
+    'size': size,
+  };
+
   MessageSummary copyWith({bool? seen, bool? flagged}) => MessageSummary(
     id: id,
     folder: folder,
@@ -419,6 +434,13 @@ class AttachmentInfo {
     contentType: _str(j, 'content_type'),
     size: _int(j, 'size'),
   );
+
+  Json toJson() => {
+    'index': index,
+    'filename': filename,
+    'content_type': contentType,
+    'size': size,
+  };
 
   final int index;
   final String filename;
@@ -475,6 +497,20 @@ class Message extends MessageSummary {
       attachments: _list(j, 'attachments', AttachmentInfo.fromJson),
     );
   }
+
+  @override
+  Json toJson() => {
+    ...super.toJson(),
+    'cc': [for (final a in cc) a.toJson()],
+    'reply_to': [for (final a in replyTo) a.toJson()],
+    'message_id': messageId,
+    'in_reply_to': inReplyTo,
+    'references': references,
+    'text': text,
+    'html': html,
+    'remote_content_blocked': remoteContentBlocked,
+    'attachments': [for (final a in attachments) a.toJson()],
+  };
 
   final List<Address> cc;
   final List<Address> replyTo;

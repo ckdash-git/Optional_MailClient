@@ -92,8 +92,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       destructive: true,
     );
     if (!ok || !mounted) return;
+    final cache = AppScope.of(context).cache;
     await _guarded(() async {
       await _api.deleteAccount(a.id);
+      await cache.removeAccount(a.id);
       await state.loadAccounts();
     }, 'Removed ${a.email}');
   }
