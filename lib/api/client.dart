@@ -133,13 +133,25 @@ class DownloadedFile {
 /// a rotated refresh token makes the master revoke the device. If refreshing
 /// fails the session is wiped.
 class ApiClient {
-  ApiClient(this.session, {http.Client? httpClient, DateTime Function()? clock})
-    : _http = httpClient ?? http.Client(),
-      _now = clock ?? DateTime.now;
+  ApiClient(
+    this.session, {
+    http.Client? httpClient,
+    DateTime Function()? clock,
+    Future<void> Function(Duration)? delay,
+  }) : _http = httpClient ?? http.Client(),
+       _now = clock ?? DateTime.now,
+       _delay = delay ?? Future<void>.delayed;
 
   final Session session;
   final http.Client _http;
   final DateTime Function() _now;
+  final Future<void> Function(Duration) _delay;
+
+  /// Reads are retried this many times after a transport failure, a gateway
+  /// error (502/503/504) or `429`. Writes are never retried: a repeated send
+  /// or delete could act twice.
+  static const _readRetries = 2;
+  static const _maxRetryWait = Duration(seconds: 5);
 
   static const _defaultTimeout = Duration(seconds: 30);
   static const _longTimeout = Duration(minutes: 3);
@@ -522,7 +534,7 @@ class ApiClient {
     final url = _url(server, path, query);
 
     final token = await accessToken();
-    var res = await _send(
+    var res = await _sendWithRetry(
       method,
       url,
       body: body,
@@ -548,6 +560,40 @@ class ApiClient {
     if (res.statusCode >= 400) throw _errorFrom(res);
     return res;
   }
+
+  /// [_send] plus bounded retries for idempotent reads.
+  Future<http.Response> _sendWithRetry(
+    String method,
+    Uri url, {
+    Object? body,
+    String? token,
+    Duration timeout = _defaultTimeout,
+  }) async {
+    final retries = method == 'GET' ? _readRetries : 0;
+    for (var attempt = 0; ; attempt++) {
+      var wait = Duration(milliseconds: 300 * (1 << attempt));
+      try {
+        final res = await _send(
+          method,
+          url,
+          body: body,
+          token: token,
+          timeout: timeout,
+        );
+        if (attempt >= retries || !_transient(res.statusCode)) return res;
+        final hinted = int.tryParse(res.headers['retry-after'] ?? '');
+        if (hinted != null) wait = Duration(seconds: hinted);
+        // A long Retry-After is for the user to wait out, not for us to block on.
+        if (wait > _maxRetryWait) return res;
+      } on ApiException catch (e) {
+        if (attempt >= retries || !e.isNetwork) rethrow;
+      }
+      await _delay(wait);
+    }
+  }
+
+  static bool _transient(int status) =>
+      status == 429 || status == 502 || status == 503 || status == 504;
 
   static bool _tokenRejected(http.Response res) =>
       res.statusCode == 401 &&

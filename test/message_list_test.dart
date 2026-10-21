@@ -109,6 +109,9 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    // Reads retry a failing gateway twice (0.3 s, 0.6 s) before giving up.
+    await tester.pump(const Duration(seconds: 2));
+    await tester.pumpAndSettle();
     expect(find.text("Couldn't load"), findsOneWidget);
     expect(find.textContaining('mail server failed'), findsOneWidget);
 

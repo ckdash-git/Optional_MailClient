@@ -70,12 +70,21 @@ class _MailScreenState extends State<MailScreen> {
   List<Folder>? _folders;
   Object? _folderError;
   int _gen = 0;
+  MailFilter _filter = MailFilter.all;
+  String? _filterScope;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _sub ??= SessionScope.realtimeOf(context).events.listen(_onEvent);
-    final account = SessionScope.watch(context).selectedAccount;
+    final state = SessionScope.watch(context);
+    // A filter belongs to one folder view: switching folder or account clears it.
+    final scope = '${state.selectedAccount?.id}|${state.folder}';
+    if (scope != _filterScope) {
+      _filterScope = scope;
+      _filter = MailFilter.all;
+    }
+    final account = state.selectedAccount;
     if (account != null && account.id != _accountId) {
       _accountId = account.id;
       _folders = null;
@@ -202,9 +211,15 @@ class _MailScreenState extends State<MailScreen> {
               children: [
                 if (account.lastError.isNotEmpty)
                   _AccountErrorBanner(message: account.lastError),
+                FilterBar(
+                  selected: _filter,
+                  unread: current?.unread ?? 0,
+                  onSelected: (f) => setState(() => _filter = f),
+                ),
                 Expanded(
                   child: MessageList(
                     key: ValueKey('${account.id}|${state.folder}'),
+                    filter: _filter,
                     account: account,
                     folder: state.folder,
                     folders: folders,
@@ -215,6 +230,47 @@ class _MailScreenState extends State<MailScreen> {
               ],
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Capsule filters above the list (All, Unread, Starred).
+class FilterBar extends StatelessWidget {
+  const FilterBar({
+    required this.selected,
+    required this.onSelected,
+    required this.unread,
+    super.key,
+  });
+
+  final MailFilter selected;
+  final ValueChanged<MailFilter> onSelected;
+  final int unread;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 48,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        children: [
+          for (final f in MailFilter.values)
+            Padding(
+              padding: const EdgeInsetsDirectional.only(end: 8),
+              child: ChoiceChip(
+                label: Text(
+                  f == MailFilter.unread && unread > 0
+                      ? '${f.label} · ${unread > 999 ? '999+' : unread}'
+                      : f.label,
+                ),
+                selected: f == selected,
+                showCheckmark: false,
+                onSelected: (_) => onSelected(f),
+              ),
+            ),
         ],
       ),
     );
