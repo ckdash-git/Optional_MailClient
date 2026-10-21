@@ -1,7 +1,9 @@
 import 'dart:async';
 
+import 'package:flutter/cupertino.dart' show CupertinoButton, CupertinoIcons;
 import 'package:flutter/material.dart';
 import 'package:optional_mail_client/api/client.dart';
+import 'package:optional_mail_client/ui/design.dart';
 import 'package:optional_mail_client/ui/mail/compose_screen.dart';
 import 'package:optional_mail_client/ui/mail/message_list.dart';
 import 'package:optional_mail_client/ui/mail/search_screen.dart';
@@ -169,6 +171,72 @@ class _MailScreenState extends State<MailScreen> {
       onSelectFolder: (name) => _selectFolder(context, name),
     );
 
+    final ios = isIOS(context);
+    final banner = account.lastError.isEmpty
+        ? null
+        : _AccountErrorBanner(message: account.lastError);
+    final list = MessageList(
+      key: ValueKey('${account.id}|${state.folder}'),
+      filter: _filter,
+      account: account,
+      folder: state.folder,
+      folders: folders,
+      refresh: _refresh,
+      onChanged: _scheduleFolderReload,
+    );
+    final filters = FilterBar(
+      selected: _filter,
+      unread: current?.unread ?? 0,
+      onSelected: (f) => setState(() => _filter = f),
+    );
+    final compose = ios
+        ? FloatingActionButton(
+            heroTag: 'compose',
+            tooltip: 'Compose',
+            onPressed: _compose,
+            child: const Icon(CupertinoIcons.square_pencil),
+          )
+        : FloatingActionButton.extended(
+            heroTag: 'compose',
+            onPressed: _compose,
+            icon: const Icon(Icons.edit_outlined),
+            label: const Text('Compose'),
+          );
+
+    // iOS phones: a large collapsing title, like Apple Mail. Pull to refresh
+    // replaces the refresh button.
+    if (ios && widget.pushed) {
+      return Scaffold(
+        floatingActionButton: compose,
+        body: NestedScrollView(
+          headerSliverBuilder: (context, _) => [
+            largeTitleBar(
+              context,
+              title,
+              previousPageTitle: 'Mailboxes',
+              trailing: CupertinoButton(
+                padding: EdgeInsets.zero,
+                minimumSize: const Size.square(44),
+                onPressed: () => _search(account),
+                child: const Icon(
+                  CupertinoIcons.search,
+                  semanticLabel: 'Search',
+                ),
+              ),
+            ),
+          ],
+          body: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ?banner,
+              filters,
+              Expanded(child: list),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: AppBarTitle(title, subtitle: account.email),
@@ -176,11 +244,7 @@ class _MailScreenState extends State<MailScreen> {
           IconButton(
             tooltip: 'Search',
             icon: const Icon(Icons.search),
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => SearchScreen(accountId: account.id),
-              ),
-            ),
+            onPressed: () => _search(account),
           ),
           IconButton(
             tooltip: 'Refresh',
@@ -197,17 +261,7 @@ class _MailScreenState extends State<MailScreen> {
           : Drawer(
               child: SafeArea(child: Builder(builder: pane)),
             ),
-      floatingActionButton: FloatingActionButton.extended(
-        heroTag: 'compose',
-        onPressed: () => Navigator.of(context).push(
-          MaterialPageRoute<void>(
-            fullscreenDialog: true,
-            builder: (_) => ComposeScreen(account: account),
-          ),
-        ),
-        icon: const Icon(Icons.edit_outlined),
-        label: const Text('Compose'),
-      ),
+      floatingActionButton: compose,
       body: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -219,28 +273,34 @@ class _MailScreenState extends State<MailScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                if (account.lastError.isNotEmpty)
-                  _AccountErrorBanner(message: account.lastError),
-                FilterBar(
-                  selected: _filter,
-                  unread: current?.unread ?? 0,
-                  onSelected: (f) => setState(() => _filter = f),
-                ),
-                Expanded(
-                  child: MessageList(
-                    key: ValueKey('${account.id}|${state.folder}'),
-                    filter: _filter,
-                    account: account,
-                    folder: state.folder,
-                    folders: folders,
-                    refresh: _refresh,
-                    onChanged: _scheduleFolderReload,
-                  ),
-                ),
+                ?banner,
+                filters,
+                Expanded(child: list),
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _search(Account account) => unawaited(
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => SearchScreen(accountId: account.id),
+      ),
+    ),
+  );
+
+  void _compose() {
+    final account = SessionScope.read(context).selectedAccount;
+    if (account == null) return;
+    unawaited(
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          fullscreenDialog: true,
+          builder: (_) => ComposeScreen(account: account),
+        ),
       ),
     );
   }

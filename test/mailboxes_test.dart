@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart' show CupertinoSliverNavigationBar;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -116,7 +117,10 @@ void main() {
         await tester.tap(find.text('Inbox'));
         await tester.pumpAndSettle();
         expect(find.byType(MailScreen), findsOneWidget);
-        expect(find.byType(BackButton), findsOneWidget);
+        // A large title with a labelled way back, like Apple Mail.
+        expect(find.byType(CupertinoSliverNavigationBar), findsOneWidget);
+        expect(find.text('Mailboxes'), findsWidgets);
+        expect(find.byType(FilterBar), findsOneWidget);
         expect(find.byType(Drawer), findsNothing);
       } finally {
         debugDefaultTargetPlatformOverride = null;

@@ -228,7 +228,7 @@ class _MailboxesScreenState extends State<MailboxesScreen> {
             ),
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                 child: Material(
                   color: t.grouped,
                   borderRadius: BorderRadius.circular(14),
