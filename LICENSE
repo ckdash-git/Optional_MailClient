@@ -1,0 +1,21 @@
+Copyright (c) 2026 Chandan Kumar Dash. All rights reserved.
+
+This software and its documentation (the "Software") are proprietary.
+
+No licence or permission of any kind is granted. You may not use, run, copy,
+modify, merge, publish, distribute, sublicense, sell, host, or create derivative
+works from the Software, in whole or in part, in source or binary form, for any
+purpose, without the prior written permission of the copyright holder.
+
+Viewing the source code on a public hosting service does not grant any of these
+rights.
+
+Third-party components used by the Software remain under their own licences,
+which are permissive (MIT, BSD, Apache-2.0, ISC); see replica/licenses.md. Nothing
+here changes the terms of those components.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE COPYRIGHT
+HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY ARISING FROM, OUT OF
+OR IN CONNECTION WITH THE SOFTWARE OR ITS USE.
