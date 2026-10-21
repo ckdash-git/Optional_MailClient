@@ -1,6 +1,7 @@
 import 'dart:ui';
 
-import 'package:flutter/cupertino.dart' show CupertinoSliverNavigationBar;
+import 'package:flutter/cupertino.dart'
+    show CupertinoIcons, CupertinoSliverNavigationBar;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -181,7 +182,9 @@ ThemeData buildTheme(Brightness brightness, {TargetPlatform? platform}) {
       style: OutlinedButton.styleFrom(
         foregroundColor: t.ink,
         minimumSize: const Size(44, 48),
-        side: BorderSide(color: t.ink, width: 1.5),
+        // iOS: a quiet filled pill. Android: a hairline outline.
+        backgroundColor: ios ? t.grouped : null,
+        side: ios ? BorderSide.none : BorderSide(color: t.ink),
         shape: RoundedRectangleBorder(
           borderRadius: ios ? radius : BorderRadius.circular(24),
         ),
@@ -207,9 +210,12 @@ ThemeData buildTheme(Brightness brightness, {TargetPlatform? platform}) {
         borderRadius: radius,
         borderSide: BorderSide.none,
       ),
+      // iOS fields are quiet fills; Android keeps the strong charcoal focus ring.
       focusedBorder: OutlineInputBorder(
         borderRadius: radius,
-        borderSide: BorderSide(color: t.ink, width: 1.5),
+        borderSide: ios
+            ? BorderSide.none
+            : BorderSide(color: t.ink, width: 1.5),
       ),
     ),
     switchTheme: SwitchThemeData(
@@ -424,5 +430,19 @@ Widget largeTitleBar(
     trailing: trailing,
     backgroundColor: t.ground.withValues(alpha: 0.88),
     border: Border(bottom: BorderSide(color: t.line, width: 0.5)),
+  );
+}
+
+/// Back button for app bars. Flutter's adaptive back icon follows the OS, so
+/// it can't show the iOS chevron in a preview; this follows the app's own
+/// platform choice ([isIOS]).
+class BackChevron extends StatelessWidget {
+  const BackChevron({super.key});
+
+  @override
+  Widget build(BuildContext context) => IconButton(
+    tooltip: 'Back',
+    icon: Icon(isIOS(context) ? CupertinoIcons.back : Icons.arrow_back),
+    onPressed: () => Navigator.of(context).maybePop(),
   );
 }

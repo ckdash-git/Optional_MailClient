@@ -291,38 +291,42 @@ class _CalendarScreenState extends State<CalendarScreen> {
   Widget build(BuildContext context) {
     final account = _account;
     final calendars = _calendars;
-    return Scaffold(
-      appBar: AppBar(
-        title: AppBarTitle(
-          'Calendar',
-          subtitle: _calendar?.name ?? account?.email,
-        ),
-        actions: [
-          IconButton(
-            tooltip: 'Today',
-            onPressed: calendars == null ? null : _goToday,
-            icon: const Icon(Icons.today_outlined),
-          ),
-          if (calendars != null && calendars.length > 1)
-            PopupMenuButton<String>(
-              tooltip: 'Choose calendar',
-              icon: const Icon(Icons.event_note_outlined),
-              onSelected: (id) {
-                setState(() => _calendarId = id);
-                unawaited(_loadEvents());
-              },
-              itemBuilder: (context) => [
-                for (final c in calendars)
-                  CheckedPopupMenuItem(
-                    value: c.id,
-                    checked: c.id == _calendarId,
-                    child: Text(c.name.isEmpty ? c.id : c.name),
-                  ),
-              ],
-            ),
-          const AccountMenuButton(),
-        ],
+    final actions = <Widget>[
+      IconButton(
+        tooltip: 'Today',
+        onPressed: calendars == null ? null : _goToday,
+        icon: const Icon(Icons.today_outlined),
       ),
+      if (calendars != null && calendars.length > 1)
+        PopupMenuButton<String>(
+          tooltip: 'Choose calendar',
+          icon: const Icon(Icons.event_note_outlined),
+          onSelected: (id) {
+            setState(() => _calendarId = id);
+            unawaited(_loadEvents());
+          },
+          itemBuilder: (context) => [
+            for (final c in calendars)
+              CheckedPopupMenuItem(
+                value: c.id,
+                checked: c.id == _calendarId,
+                child: Text(c.name.isEmpty ? c.id : c.name),
+              ),
+          ],
+        ),
+      const AccountMenuButton(),
+    ];
+    final ios = isIOS(context);
+    return Scaffold(
+      appBar: ios
+          ? null
+          : AppBar(
+              title: AppBarTitle(
+                'Calendar',
+                subtitle: _calendar?.name ?? account?.email,
+              ),
+              actions: actions,
+            ),
       floatingActionButton: _calendarId == null
           ? null
           : FloatingActionButton.extended(
@@ -331,7 +335,21 @@ class _CalendarScreenState extends State<CalendarScreen> {
               icon: const Icon(Icons.add),
               label: const Text('Event'),
             ),
-      body: _body(account, calendars),
+      body: ios
+          ? NestedScrollView(
+              headerSliverBuilder: (context, _) => [
+                largeTitleBar(
+                  context,
+                  'Calendar',
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: actions,
+                  ),
+                ),
+              ],
+              body: _body(account, calendars),
+            )
+          : _body(account, calendars),
     );
   }
 

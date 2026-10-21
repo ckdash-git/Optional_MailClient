@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:optional_mail_client/api/cache.dart';
 import 'package:optional_mail_client/api/client.dart';
+import 'package:optional_mail_client/ui/design.dart';
 import 'package:optional_mail_client/ui/format.dart';
 import 'package:optional_mail_client/ui/mail/message_screen.dart';
 import 'package:optional_mail_client/ui/scope.dart';
@@ -60,7 +61,6 @@ class MessageList extends StatefulWidget {
 class _MessageListState extends State<MessageList> {
   static const _pageSize = 50;
 
-  final _scroll = ScrollController();
   StreamSubscription<RealtimeEvent>? _sub;
   Timer? _debounce;
 
@@ -99,7 +99,6 @@ class _MessageListState extends State<MessageList> {
   @override
   void initState() {
     super.initState();
-    _scroll.addListener(_onScroll);
     widget.refresh?.addListener(_reload);
     unawaited(_showSaved().then((_) => _load()));
   }
@@ -139,7 +138,6 @@ class _MessageListState extends State<MessageList> {
     widget.refresh?.removeListener(_reload);
     unawaited(_sub?.cancel());
     _debounce?.cancel();
-    _scroll.dispose();
     super.dispose();
   }
 
@@ -159,8 +157,11 @@ class _MessageListState extends State<MessageList> {
 
   void _reload() => unawaited(_load(showSpinner: _items.isEmpty));
 
-  void _onScroll() {
-    if (_scroll.position.extentAfter < 600) unawaited(_loadMore());
+  bool _onScroll(ScrollNotification n) {
+    if (n.metrics.axis == Axis.vertical && n.metrics.extentAfter < 600) {
+      unawaited(_loadMore());
+    }
+    return false;
   }
 
   /// Loads the newest page. With [merge], older pages already shown are kept
@@ -358,48 +359,51 @@ class _MessageListState extends State<MessageList> {
         _folderInfo?.role == FolderRole.drafts;
     final archive = _archive;
 
-    final list = RefreshIndicator(
-      onRefresh: () => _load(showSpinner: false),
-      child: visible.isEmpty
-          ? _empty()
-          : ListView.separated(
-              controller: _scroll,
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.only(bottom: 88),
-              itemCount: visible.length + 1,
-              separatorBuilder: (_, _) => const Divider(height: 1, indent: 76),
-              itemBuilder: (context, i) {
-                if (i == visible.length) return _footer();
-                final m = visible[i];
-                return Dismissible(
-                  key: ValueKey('msg-${m.id}'),
-                  direction: archive != null
-                      ? DismissDirection.horizontal
-                      : DismissDirection.endToStart,
-                  background: _SwipeBackground(
-                    icon: Icons.archive_outlined,
-                    label: 'Archive',
-                    color: Theme.of(context).colorScheme.tertiaryContainer,
-                    alignment: AlignmentDirectional.centerStart,
-                  ),
-                  secondaryBackground: _SwipeBackground(
-                    icon: Icons.delete_outline,
-                    label: 'Delete',
-                    color: Theme.of(context).colorScheme.errorContainer,
-                    alignment: AlignmentDirectional.centerEnd,
-                  ),
-                  onDismissed: (dir) => unawaited(
-                    _swiped(m, archive: dir == DismissDirection.startToEnd),
-                  ),
-                  child: MessageTile(
-                    message: m,
-                    showRecipients: isSent,
-                    onTap: () => _open(m),
-                    onToggleStar: () => _toggleStar(m),
-                  ),
-                );
-              },
-            ),
+    final list = NotificationListener<ScrollNotification>(
+      onNotification: _onScroll,
+      child: RefreshIndicator(
+        onRefresh: () => _load(showSpinner: false),
+        child: visible.isEmpty
+            ? _empty()
+            : ListView.separated(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.only(bottom: 88),
+                itemCount: visible.length + 1,
+                separatorBuilder: (_, _) =>
+                    const Divider(height: 1, indent: 76),
+                itemBuilder: (context, i) {
+                  if (i == visible.length) return _footer();
+                  final m = visible[i];
+                  return Dismissible(
+                    key: ValueKey('msg-${m.id}'),
+                    direction: archive != null
+                        ? DismissDirection.horizontal
+                        : DismissDirection.endToStart,
+                    background: _SwipeBackground(
+                      icon: Icons.archive_outlined,
+                      label: 'Archive',
+                      color: Theme.of(context).colorScheme.tertiaryContainer,
+                      alignment: AlignmentDirectional.centerStart,
+                    ),
+                    secondaryBackground: _SwipeBackground(
+                      icon: Icons.delete_outline,
+                      label: 'Delete',
+                      color: Theme.of(context).colorScheme.errorContainer,
+                      alignment: AlignmentDirectional.centerEnd,
+                    ),
+                    onDismissed: (dir) => unawaited(
+                      _swiped(m, archive: dir == DismissDirection.startToEnd),
+                    ),
+                    child: MessageTile(
+                      message: m,
+                      showRecipients: isSent,
+                      onTap: () => _open(m),
+                      onToggleStar: () => _toggleStar(m),
+                    ),
+                  );
+                },
+              ),
+      ),
     );
     if (!_offline) return list;
     return Column(
@@ -633,10 +637,7 @@ class MessageTile extends StatelessWidget {
                           Text(
                             date,
                             style: theme.textTheme.labelMedium?.copyWith(
-                              fontWeight: weight,
-                              color: unread
-                                  ? scheme.primary
-                                  : scheme.onSurfaceVariant,
+                              color: scheme.onSurfaceVariant,
                             ),
                           ),
                         ],
@@ -683,7 +684,8 @@ class MessageTile extends StatelessWidget {
                   ),
                 ),
               ),
-              if (onToggleStar != null)
+              // iOS shows the star only on starred rows; Android always offers it.
+              if (onToggleStar != null && (m.flagged || !isIOS(context)))
                 IconButton(
                   tooltip: m.flagged ? 'Remove star' : 'Star',
                   isSelected: m.flagged,

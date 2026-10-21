@@ -50,7 +50,7 @@ class AppBarTitle extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(title, overflow: TextOverflow.ellipsis),
-        if (subtitle != null && subtitle!.isNotEmpty)
+        if (subtitle != null && subtitle!.isNotEmpty && subtitle != title)
           Text(
             subtitle!,
             overflow: TextOverflow.ellipsis,

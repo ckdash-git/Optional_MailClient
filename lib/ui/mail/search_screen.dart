@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/cupertino.dart' show CupertinoButton, CupertinoIcons;
 import 'package:flutter/material.dart';
 import 'package:optional_mail_client/api/cache.dart';
 import 'package:optional_mail_client/api/client.dart';
@@ -87,8 +88,69 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget build(BuildContext context) {
     final state = SessionScope.watch(context);
     final theme = Theme.of(context);
+    final ios = isIOS(context);
+    if (ios) {
+      return Scaffold(
+        body: SafeArea(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 4, 8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _controller,
+                        autofocus: true,
+                        textInputAction: TextInputAction.search,
+                        onChanged: _onChanged,
+                        decoration: InputDecoration(
+                          hintText: 'Search saved mail',
+                          isDense: true,
+                          prefixIcon: const Icon(
+                            CupertinoIcons.search,
+                            size: 20,
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: BorderSide.none,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: BorderSide.none,
+                          ),
+                          suffixIcon: _controller.text.isEmpty
+                              ? null
+                              : IconButton(
+                                  tooltip: 'Clear search',
+                                  icon: const Icon(
+                                    CupertinoIcons.xmark_circle_fill,
+                                    size: 18,
+                                  ),
+                                  onPressed: () {
+                                    _controller.clear();
+                                    unawaited(_run(''));
+                                  },
+                                ),
+                        ),
+                      ),
+                    ),
+                    CupertinoButton(
+                      onPressed: () => Navigator.of(context).maybePop(),
+                      child: const Text('Cancel'),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(child: _body(state, theme)),
+            ],
+          ),
+        ),
+      );
+    }
     return Scaffold(
       appBar: AppBar(
+        leading: const BackChevron(),
         titleSpacing: 0,
         title: TextField(
           controller: _controller,
@@ -97,6 +159,9 @@ class _SearchScreenState extends State<SearchScreen> {
           decoration: const InputDecoration(
             hintText: 'Search saved mail',
             border: InputBorder.none,
+            enabledBorder: InputBorder.none,
+            focusedBorder: InputBorder.none,
+            filled: false,
           ),
           onChanged: _onChanged,
         ),

@@ -1,7 +1,9 @@
 import 'dart:async';
 
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/material.dart';
 import 'package:optional_mail_client/api/client.dart';
+import 'package:optional_mail_client/ui/design.dart';
 import 'package:optional_mail_client/ui/format.dart';
 import 'package:optional_mail_client/ui/mail/compose_screen.dart';
 import 'package:optional_mail_client/ui/mail/invite_card.dart';
@@ -270,29 +272,37 @@ class _MessageScreenState extends State<MessageScreen> {
   Widget build(BuildContext context) {
     final m = _message;
     final archive = _archive;
+    final ios = isIOS(context);
     return Scaffold(
       appBar: AppBar(
+        leading: const BackChevron(),
         actions: [
           IconButton(
             tooltip: _summary.flagged ? 'Remove star' : 'Star',
             isSelected: _summary.flagged,
             onPressed: _busy ? null : _toggleStar,
-            icon: const Icon(Icons.star_outline),
-            selectedIcon: Icon(Icons.star, color: Colors.amber.shade700),
+            icon: Icon(ios ? CupertinoIcons.star : Icons.star_outline),
+            selectedIcon: Icon(
+              ios ? CupertinoIcons.star_fill : Icons.star,
+              color: const Color(0xFFFF9F0A),
+            ),
           ),
           if (archive != null)
             IconButton(
               tooltip: 'Archive',
               onPressed: _busy ? null : () => _moveTo(archive.name, 'Archive'),
-              icon: const Icon(Icons.archive_outlined),
+              icon: Icon(
+                ios ? CupertinoIcons.archivebox : Icons.archive_outlined,
+              ),
             ),
           IconButton(
             tooltip: 'Delete',
             onPressed: _busy ? null : _delete,
-            icon: const Icon(Icons.delete_outline),
+            icon: Icon(ios ? CupertinoIcons.trash : Icons.delete_outline),
           ),
           PopupMenuButton<String>(
             tooltip: 'More',
+            icon: Icon(ios ? CupertinoIcons.ellipsis_circle : Icons.more_vert),
             enabled: !_busy,
             onSelected: (v) => switch (v) {
               'unread' => _markUnread(),

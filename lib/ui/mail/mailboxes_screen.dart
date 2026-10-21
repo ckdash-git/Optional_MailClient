@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/cupertino.dart' show CupertinoButton, CupertinoIcons;
 import 'package:flutter/material.dart';
@@ -8,16 +9,13 @@ import 'package:optional_mail_client/ui/format.dart';
 import 'package:optional_mail_client/ui/mail/mail_screen.dart';
 import 'package:optional_mail_client/ui/mail/message_list.dart';
 import 'package:optional_mail_client/ui/mail/message_screen.dart';
+import 'package:optional_mail_client/ui/mail/recents_feed.dart';
 import 'package:optional_mail_client/ui/mail/search_screen.dart';
 import 'package:optional_mail_client/ui/scope.dart';
 import 'package:optional_mail_client/ui/widgets/avatar.dart';
 import 'package:optional_mail_client/ui/widgets/states.dart';
 
-/// A recent message together with the account it belongs to.
-typedef Recent = ({Account account, MessageSummary message});
-
-const _recentsPerAccount = 10;
-const _recentsShown = 12;
+const _recentsPage = 20;
 
 /// iOS root of the Mail tab: accounts first, then "Recents", a merged newest-first list across
 /// accounts. Tapping an account opens its folders; the inbox is a pushed screen with the
@@ -34,11 +32,21 @@ class _MailboxesScreenState extends State<MailboxesScreen> {
   Timer? _debounce;
   Map<String, List<Folder>> _folders = {};
   List<Recent> _recents = const [];
+  RecentsFeed? _feed;
+  final _scroll = ScrollController();
+  bool _loadingMore = false;
+  Object? _moreError;
   Object? _error;
   bool _loaded = false;
   int _gen = 0;
   int _seenOpenRequest = 0;
   String _accountsKey = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _scroll.addListener(_onScroll);
+  }
 
   @override
   void didChangeDependencies() {
@@ -65,6 +73,7 @@ class _MailboxesScreenState extends State<MailboxesScreen> {
   void dispose() {
     unawaited(_sub?.cancel());
     _debounce?.cancel();
+    _scroll.dispose();
     super.dispose();
   }
 
@@ -73,35 +82,35 @@ class _MailboxesScreenState extends State<MailboxesScreen> {
     _debounce = Timer(const Duration(milliseconds: 500), _load);
   }
 
-  /// ponytail: one page per account, merged client-side. A server-side unified list (with paging)
-  /// is the upgrade once accounts routinely have more than a handful of busy inboxes.
+  /// Folders and the first page of Recents. Recents is a merged, paged list
+  /// across accounts (see [RecentsFeed]); [_loadMoreRecents] extends it. A
+  /// refresh keeps as many rows as were showing, so the scroll position holds.
   Future<void> _load() async {
     if (!mounted) return;
     final api = AppScope.of(context).api;
     final accounts = SessionScope.read(context).accounts;
     final gen = ++_gen;
+    final feed = RecentsFeed(
+      (a, before, limit) =>
+          api.messages(a.id, folder: 'INBOX', before: before, limit: limit),
+      accounts,
+      pageSize: _recentsPage,
+    );
     try {
-      final results = await Future.wait([
-        for (final a in accounts)
-          Future.wait([
-            api.folders(a.id),
-            api.messages(a.id, folder: 'INBOX', limit: _recentsPerAccount),
-          ]),
-      ]);
+      final (folders, _) = await (
+        Future.wait([for (final a in accounts) api.folders(a.id)]),
+        feed.extend(max(_recentsPage, _recents.length)),
+      ).wait;
       if (!mounted || gen != _gen) return;
-      final folders = <String, List<Folder>>{};
-      final recents = <Recent>[];
-      for (var i = 0; i < accounts.length; i++) {
-        folders[accounts[i].id] = sortFolders(results[i][0] as List<Folder>);
-        for (final m in (results[i][1] as MessagePage).messages) {
-          recents.add((account: accounts[i], message: m));
-        }
-      }
-      recents.sort((a, b) => b.message.date.compareTo(a.message.date));
       setState(() {
-        _folders = folders;
-        _recents = recents.take(_recentsShown).toList();
+        _folders = {
+          for (var i = 0; i < accounts.length; i++)
+            accounts[i].id: sortFolders(folders[i]),
+        };
+        _feed = feed;
+        _recents = feed.items;
         _error = null;
+        _moreError = null;
         _loaded = true;
       });
     } on Object catch (e) {
@@ -110,6 +119,29 @@ class _MailboxesScreenState extends State<MailboxesScreen> {
         _error = e;
         _loaded = true;
       });
+    }
+  }
+
+  void _onScroll() {
+    if (_scroll.position.extentAfter < 600) unawaited(_loadMoreRecents());
+  }
+
+  Future<void> _loadMoreRecents() async {
+    final feed = _feed;
+    if (feed == null || !feed.hasMore || _loadingMore || !_loaded) return;
+    final gen = _gen;
+    setState(() {
+      _loadingMore = true;
+      _moreError = null;
+    });
+    try {
+      await feed.extend(_recents.length + _recentsPage);
+      if (!mounted || gen != _gen) return;
+      setState(() => _recents = feed.items);
+    } on Object catch (e) {
+      if (mounted && gen == _gen) setState(() => _moreError = e);
+    } finally {
+      if (mounted) setState(() => _loadingMore = false);
     }
   }
 
@@ -176,6 +208,7 @@ class _MailboxesScreenState extends State<MailboxesScreen> {
       body: RefreshIndicator(
         onRefresh: _load,
         child: CustomScrollView(
+          controller: _scroll,
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
             largeTitleBar(
@@ -195,7 +228,7 @@ class _MailboxesScreenState extends State<MailboxesScreen> {
             ),
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                 child: Material(
                   color: t.grouped,
                   borderRadius: BorderRadius.circular(14),
@@ -262,6 +295,21 @@ class _MailboxesScreenState extends State<MailboxesScreen> {
                     onToggleStar: null,
                   );
                 },
+              ),
+            if (_recents.isNotEmpty && (_feed?.hasMore ?? false))
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Center(
+                    child: _moreError != null
+                        ? TextButton.icon(
+                            onPressed: _loadMoreRecents,
+                            icon: const Icon(Icons.refresh),
+                            label: const Text("Couldn't load more. Try again"),
+                          )
+                        : const LoadingView(label: 'Loading more messages'),
+                  ),
+                ),
               ),
             // Room for the floating glass tab bar.
             SliverToBoxAdapter(

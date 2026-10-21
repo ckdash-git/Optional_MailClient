@@ -61,7 +61,24 @@ the pages already loaded and fetches older pages until something matches. On iOS
 large collapsing title like Settings; Android keeps its app bar. Widget tests run both platforms at
 200% text size to catch overflow.
 
+## iOS polish (round 3)
+
+- The pushed Inbox, Contacts and Calendar use the large collapsing title with a labelled back
+  ("Mailboxes"). Pull to refresh replaces the refresh button.
+- Unread is the red dot plus bold text; dates stay muted. The star shows only on starred rows
+  on iOS; Android keeps it on every row.
+- Message and search screens use Cupertino icons, a chevron back and a pill-style search field
+  with Cancel. Outlined buttons are quiet filled pills on iOS and hairline outlines on Android.
+- Fields have no focus ring on iOS; Android keeps the charcoal ring.
+- Compose is an icon-only round button on iOS and an extended Compose button on Android.
+
+Recents on the Mailboxes screen is a merged, paged list (`RecentsFeed`): a message is shown only
+once no account can still hold a newer one, so the order is always right while pages load as you
+scroll.
+
+Screens: `design/screens-v2/` (iOS and Android, light and dark).
+
 ## Not built yet
 
-A paged server-side Recents (today it merges one page per account), and Dynamic Type verification
-on a device.
+Dynamic Type verification on a real device, and real Simulator / emulator captures (needs a Mac
+and the Android SDK; commands are in docs/CLIENT.md).
