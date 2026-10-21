@@ -47,7 +47,8 @@ CI (`.github/workflows/ci.yml`) also runs these checks, plus gofmt, `dart format
 
 ## Licensing
 
-The product is closed source. Every dependency is permissively licensed (MIT, BSD,
+The product is proprietary: all rights reserved, no licence granted (see [LICENSE](LICENSE)).
+The repository is public for visibility only. Every dependency is permissively licensed (MIT, BSD,
 Apache-2.0, ISC); both licence scripts fail the build otherwise. See
 [replica/licenses.md](replica/licenses.md), including the list of projects that are
 for UX reference only.
