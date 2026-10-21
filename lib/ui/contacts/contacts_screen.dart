@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:optional_mail_client/api/client.dart';
 import 'package:optional_mail_client/ui/contacts/contact_detail.dart';
 import 'package:optional_mail_client/ui/contacts/contact_editor.dart';
+import 'package:optional_mail_client/ui/design.dart';
 import 'package:optional_mail_client/ui/scope.dart';
 import 'package:optional_mail_client/ui/widgets/account_menu.dart';
 import 'package:optional_mail_client/ui/widgets/avatar.dart';
@@ -156,33 +157,40 @@ class _ContactsScreenState extends State<ContactsScreen> {
     for (final b in books ?? const <AddressBook>[]) {
       if (b.id == _bookId) bookName = b.name;
     }
+    final actions = <Widget>[
+      if (books != null && books.length > 1)
+        PopupMenuButton<String>(
+          tooltip: 'Choose address book',
+          icon: const Icon(Icons.import_contacts_outlined),
+          onSelected: (id) {
+            setState(() {
+              _bookId = id;
+              _contacts = null;
+            });
+            unawaited(_load());
+          },
+          itemBuilder: (context) => [
+            for (final b in books)
+              CheckedPopupMenuItem(
+                value: b.id,
+                checked: b.id == _bookId,
+                child: Text(b.name.isEmpty ? b.id : b.name),
+              ),
+          ],
+        ),
+      const AccountMenuButton(),
+    ];
+    final ios = isIOS(context);
     return Scaffold(
-      appBar: AppBar(
-        title: AppBarTitle('Contacts', subtitle: bookName ?? _account?.email),
-        actions: [
-          if (books != null && books.length > 1)
-            PopupMenuButton<String>(
-              tooltip: 'Choose address book',
-              icon: const Icon(Icons.import_contacts_outlined),
-              onSelected: (id) {
-                setState(() {
-                  _bookId = id;
-                  _contacts = null;
-                });
-                unawaited(_load());
-              },
-              itemBuilder: (context) => [
-                for (final b in books)
-                  CheckedPopupMenuItem(
-                    value: b.id,
-                    checked: b.id == _bookId,
-                    child: Text(b.name.isEmpty ? b.id : b.name),
-                  ),
-              ],
+      appBar: ios
+          ? null
+          : AppBar(
+              title: AppBarTitle(
+                'Contacts',
+                subtitle: bookName ?? _account?.email,
+              ),
+              actions: actions,
             ),
-          const AccountMenuButton(),
-        ],
-      ),
       floatingActionButton: _bookId == null
           ? null
           : FloatingActionButton(
@@ -191,7 +199,21 @@ class _ContactsScreenState extends State<ContactsScreen> {
               onPressed: _create,
               child: const Icon(Icons.person_add_alt_1_outlined),
             ),
-      body: _body(),
+      body: ios
+          ? NestedScrollView(
+              headerSliverBuilder: (context, _) => [
+                largeTitleBar(
+                  context,
+                  'Contacts',
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: actions,
+                  ),
+                ),
+              ],
+              body: _body(),
+            )
+          : _body(),
     );
   }
 

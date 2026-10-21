@@ -415,11 +415,13 @@ Widget largeTitleBar(
   BuildContext context,
   String title, {
   String? previousPageTitle,
+  Widget? trailing,
 }) {
   final t = Palette.of(Theme.of(context).brightness);
   return CupertinoSliverNavigationBar(
     largeTitle: Text(title),
     previousPageTitle: previousPageTitle,
+    trailing: trailing,
     backgroundColor: t.ground.withValues(alpha: 0.88),
     border: Border(bottom: BorderSide(color: t.line, width: 0.5)),
   );

@@ -515,4 +515,95 @@ void main() {
       );
     });
   });
+
+  group('read retries', () {
+    Future<(ApiClient, List<Duration>)> build(
+      Future<http.Response> Function(http.Request, int n) handler,
+    ) async {
+      final waits = <Duration>[];
+      var n = 0;
+      final api = ApiClient(
+        await signedInSession(MemoryKeyValueStore()),
+        httpClient: MockClient((req) => handler(req, n++)),
+        delay: (d) async => waits.add(d),
+      );
+      return (api, waits);
+    }
+
+    test('a GET survives a gateway error and a dropped connection', () async {
+      final (api, waits) = await build((req, n) async {
+        if (n == 0) return http.Response('', 503);
+        if (n == 1) throw http.ClientException('reset');
+        return jsonResponse(<Object>[]);
+      });
+      expect(await api.accounts(), isEmpty);
+      expect(waits, hasLength(2));
+    });
+
+    test('gives up after two retries and reports the last failure', () async {
+      var calls = 0;
+      final (api, _) = await build((req, n) async {
+        calls++;
+        return http.Response('', 502);
+      });
+      await expectLater(
+        api.accounts(),
+        throwsA(
+          isA<ApiException>().having((e) => e.code, 'code', 'upstream_error'),
+        ),
+      );
+      expect(calls, 3);
+    });
+
+    test(
+      'honours a short Retry-After but never blocks on a long one',
+      () async {
+        final (api, waits) = await build((req, n) async {
+          if (n == 0) {
+            return http.Response('', 429, headers: {'retry-after': '2'});
+          }
+          return jsonResponse(<Object>[]);
+        });
+        await api.accounts();
+        expect(waits, [const Duration(seconds: 2)]);
+
+        var calls = 0;
+        final (slow, slowWaits) = await build((req, n) async {
+          calls++;
+          return http.Response('', 429, headers: {'retry-after': '120'});
+        });
+        await expectLater(
+          slow.accounts(),
+          throwsA(
+            isA<ApiException>().having((e) => e.code, 'code', 'rate_limited'),
+          ),
+        );
+        expect(calls, 1);
+        expect(slowWaits, isEmpty);
+      },
+    );
+
+    test('writes are never repeated', () async {
+      var calls = 0;
+      final (api, _) = await build((req, n) async {
+        calls++;
+        return http.Response('', 503);
+      });
+      await expectLater(
+        api.deleteMessage('a', 'm', folder: 'INBOX'),
+        throwsA(isA<ApiException>()),
+      );
+      expect(calls, 1);
+    });
+
+    test('client errors are not retried', () async {
+      var calls = 0;
+      final (api, _) = await build((req, n) async {
+        calls++;
+        return errorResponse(404, 'not_found');
+      });
+      await expectLater(api.accounts(), throwsA(isA<ApiException>()));
+      expect(calls, 1);
+    });
+  });
 }

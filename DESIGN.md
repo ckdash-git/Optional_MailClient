@@ -53,7 +53,15 @@ as Apple Calendar does. The delivery status is truthful: "Instant" for IMAP acco
 
 Android and wide layouts keep the folder drawer or side pane and the Material 3 bars.
 
+## Filters and large titles
+
+Mail shows capsule filters (All, Unread with the folder's unread count, Starred) above the list.
+A filter belongs to one folder view and resets when the folder or account changes. It applies to
+the pages already loaded and fetches older pages until something matches. On iOS, Contacts has a
+large collapsing title like Settings; Android keeps its app bar. Widget tests run both platforms at
+200% text size to catch overflow.
+
 ## Not built yet
 
-Filter chips (Unread, Starred), large titles on Contacts, a paged server-side Recents (today it
-merges one page per account), and Dynamic Type verification on a device.
+A paged server-side Recents (today it merges one page per account), and Dynamic Type verification
+on a device.

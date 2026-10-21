@@ -9,6 +9,22 @@ import 'package:optional_mail_client/ui/widgets/avatar.dart';
 import 'package:optional_mail_client/ui/widgets/dialogs.dart';
 import 'package:optional_mail_client/ui/widgets/states.dart';
 
+/// Which messages a folder view shows.
+enum MailFilter {
+  all('All'),
+  unread('Unread'),
+  starred('Starred');
+
+  const MailFilter(this.label);
+  final String label;
+
+  bool accepts(MessageSummary m) => switch (this) {
+    all => true,
+    unread => !m.seen,
+    starred => m.flagged,
+  };
+}
+
 /// Paged list of messages in one folder.
 class MessageList extends StatefulWidget {
   const MessageList({
@@ -18,9 +34,13 @@ class MessageList extends StatefulWidget {
     super.key,
     this.refresh,
     this.onChanged,
+    this.filter = MailFilter.all,
   });
 
   final Account account;
+
+  /// Applied to the pages loaded so far; more pages are fetched until it fills.
+  final MailFilter filter;
   final String folder;
 
   /// All folders of the account (for roles, archive and move targets).
@@ -304,7 +324,9 @@ class _MessageListState extends State<MessageList> {
     if (_error != null && _items.isEmpty) {
       return ErrorView(error: _error, onRetry: _load);
     }
-    final visible = _items.where((m) => !_hidden.contains(m.id)).toList();
+    final visible = _items
+        .where((m) => !_hidden.contains(m.id) && widget.filter.accepts(m))
+        .toList();
     final isSent =
         _folderInfo?.role == FolderRole.sent ||
         _folderInfo?.role == FolderRole.drafts;
@@ -313,11 +335,7 @@ class _MessageListState extends State<MessageList> {
     return RefreshIndicator(
       onRefresh: () => _load(showSpinner: false),
       child: visible.isEmpty
-          ? const MessageView(
-              icon: Icons.inbox_outlined,
-              title: 'No messages',
-              message: 'This folder is empty.',
-            )
+          ? _empty()
           : ListView.separated(
               controller: _scroll,
               physics: const AlwaysScrollableScrollPhysics(),
@@ -357,6 +375,44 @@ class _MessageListState extends State<MessageList> {
               },
             ),
     );
+  }
+
+  Widget _empty() {
+    final filter = widget.filter;
+    // The filter may match older pages that are not loaded yet.
+    if (filter != MailFilter.all && _next != null && _moreError == null) {
+      if (!_loadingMore) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) unawaited(_loadMore());
+        });
+      }
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: const [
+          Padding(
+            padding: EdgeInsets.all(32),
+            child: LoadingView(label: 'Looking for messages'),
+          ),
+        ],
+      );
+    }
+    return switch (filter) {
+      MailFilter.all => const MessageView(
+        icon: Icons.inbox_outlined,
+        title: 'No messages',
+        message: 'This folder is empty.',
+      ),
+      MailFilter.unread => const MessageView(
+        icon: Icons.mark_email_read_outlined,
+        title: 'All caught up',
+        message: 'No unread messages here.',
+      ),
+      MailFilter.starred => const MessageView(
+        icon: Icons.star_border,
+        title: 'No starred messages',
+        message: 'Star a message to find it here.',
+      ),
+    };
   }
 
   Widget _footer() {
